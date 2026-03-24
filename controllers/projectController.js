@@ -1,10 +1,19 @@
 const Project = require('../models/Project');
+const security = require('./securityController');
 
 // Create new project
 exports.createProject = async (req, res) => {
   try {
     const project = new Project(req.body);
     const savedProject = await project.save();
+
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'CREATE_PROJECT',
+      resource: 'Project',
+      details: `Created project: ${savedProject.name}`,
+      timestamp: new Date()
+    });
     res.status(201).json(savedProject);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -54,6 +63,14 @@ exports.updateProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!project) return res.status(404).json({ message: 'Project not found' });
+    
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'UPDATE_PROJECT',
+      resource: 'Project',
+      details: `Updated project: ${project.name}`,
+      timestamp: new Date()
+    });
     res.json(project);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -65,6 +82,14 @@ exports.deleteProject = async (req, res) => {
   try {
     const project = await Project.findByIdAndDelete(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
+    
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'DELETE_PROJECT',
+      resource: 'Project',
+      details: `Deleted project: ${project.name}`,
+      timestamp: new Date()
+    });
     res.json({ message: 'Project deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const security = require('./securityController');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -49,6 +50,14 @@ exports.createUser = async (req, res) => {
 
     await newUser.save();
 
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'CREATE_USER',
+      resource: 'User',
+      details: `Created user: ${username}`,
+      timestamp: new Date()
+    });
+
     const userResponse = newUser.toObject();
     delete userResponse.password;
 
@@ -81,6 +90,14 @@ exports.updateUser = async (req, res) => {
 
     await user.save();
 
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'UPDATE_USER',
+      resource: 'User',
+      details: `Updated user: ${user.username}`,
+      timestamp: new Date()
+    });
+
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -97,6 +114,14 @@ exports.deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'DELETE_USER',
+      resource: 'User',
+      details: `Deleted user: ${user.username}`,
+      timestamp: new Date()
+    });
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting user', error: error.message });
