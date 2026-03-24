@@ -21,14 +21,22 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Request logger
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+const { authMiddleware, roleMiddleware } = require('./middlewares/authMiddleware');
+
 // DIAGNOSTIC ROUTES FIRST
 console.log('--- Registering Top-Level Debug Routes ---');
-app.get('/api/security/audit-logs', (req, res) => {
+app.get('/api/security/audit-logs', authMiddleware, roleMiddleware(['Admin']), (req, res) => {
   console.log('CRITICAL DEBUG: Hit /api/security/audit-logs');
   return securityController.getAuditLogs(req, res);
 });
 
-app.get('/api/dashboard/stats', (req, res) => {
+app.get('/api/dashboard/stats', authMiddleware, (req, res) => {
   console.log('CRITICAL DEBUG: Hit /api/dashboard/stats');
   return dashboardController.getStats(req, res);
 });
@@ -76,7 +84,17 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(buildPath, 'index.html'));
+  const fs = require('fs');
+  const indexFile = path.join(buildPath, 'index.html');
+  
+  if (fs.existsSync(indexFile)) {
+    res.sendFile(indexFile);
+  } else {
+    res.status(404).json({ 
+      message: 'Frontend build not found. Please run "npm run build" in the client directory.',
+      backendStatus: 'Running'
+    });
+  }
 });
 
 // Start server

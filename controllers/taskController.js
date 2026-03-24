@@ -40,6 +40,12 @@ exports.getTasks = async (req, res) => {
 // Update task
 exports.updateTask = async (req, res) => {
   try {
+    // Only Admin and Project Manager can assign/reassign tasks
+    const authorizedToAssign = ['Admin', 'Project Manager'].includes(req.user?.role);
+    if (!authorizedToAssign) {
+      delete req.body.assigneeId;
+    }
+
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!task) return res.status(404).json({ message: 'Task not found' });
 

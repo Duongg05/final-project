@@ -3,7 +3,16 @@ const security = require('./securityController');
 
 exports.createDocument = async (req, res) => {
   try {
-    const doc = new Document(req.body);
+    const documentData = req.body;
+    if (req.file) {
+      documentData.fileUrl = req.file.path.replace(/\\/g, '/');
+      documentData.name = req.file.originalname; // Default name to the original file name
+    }
+    
+    // Explicitly set who uploaded this document
+    documentData.uploadedBy = req.user?.id || documentData.uploadedBy;
+
+    const doc = new Document(documentData);
     const saved = await doc.save();
 
     await security.createLog({

@@ -83,11 +83,20 @@ exports.deleteProject = async (req, res) => {
     const project = await Project.findByIdAndDelete(req.params.id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
     
+    // Cascade delete related entities
+    const Task = require('../models/Task');
+    const Document = require('../models/Document');
+    const SourceCode = require('../models/SourceCode');
+    
+    await Task.deleteMany({ projectId: project._id });
+    await Document.deleteMany({ projectId: project._id });
+    await SourceCode.deleteMany({ projectId: project._id });
+
     await security.createLog({
       userId: req.user?.id,
       action: 'DELETE_PROJECT',
       resource: 'Project',
-      details: `Deleted project: ${project.name}`,
+      details: `Deleted project: ${project.name} along with its tasks, documents, and source codes`,
       timestamp: new Date()
     });
     res.json({ message: 'Project deleted successfully' });

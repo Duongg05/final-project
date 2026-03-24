@@ -3,7 +3,13 @@ const security = require('./securityController');
 
 exports.createSourceCode = async (req, res) => {
   try {
-    const sourceCode = new SourceCode(req.body);
+    const sourceCodeData = req.body;
+    if (req.file) {
+      sourceCodeData.repoUrl = req.file.path.replace(/\\/g, '/');
+      sourceCodeData.repoName = req.file.originalname;
+    }
+
+    const sourceCode = new SourceCode(sourceCodeData);
     const saved = await sourceCode.save();
 
     await security.createLog({

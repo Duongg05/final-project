@@ -28,7 +28,12 @@ exports.me = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json({ user });
+    
+    // Ensure id is present for frontend compatibility
+    const userObj = user.toObject();
+    userObj.id = user._id;
+    
+    res.status(200).json({ user: userObj });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
