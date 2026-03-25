@@ -46,22 +46,31 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/scms')
   .then(async () => {
     console.log('MongoDB connected successfully');
     
-    // Create default admin user
+    // Seed 5 standard test accounts
     const User = require('./models/User');
     const bcrypt = require('bcrypt');
-    const adminEmail = 'admin@gmail.com';
-    const adminExists = await User.findOne({ email: adminEmail });
     
-    if (!adminExists) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash('123456', salt);
-      await User.create({
-        username: 'admin',
-        email: adminEmail,
-        password: hashedPassword,
-        role: 'Admin'
-      });
-      console.log('Default admin account created: admin@gmail.com / 123456');
+    const standardUsers = [
+      { username: 'admin', email: 'admin@gmail.com', role: 'Admin' },
+      { username: 'hr', email: 'hr@gmail.com', role: 'HR Manager' },
+      { username: 'pm', email: 'pm@gmail.com', role: 'Project Manager' },
+      { username: 'dev', email: 'dev@gmail.com', role: 'Developer' },
+      { username: 'tester', email: 'tester@gmail.com', role: 'Tester' }
+    ];
+
+    for (const u of standardUsers) {
+      const exists = await User.findOne({ email: u.email });
+      if (!exists) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('123456', salt);
+        await User.create({
+          username: u.username,
+          email: u.email,
+          password: hashedPassword,
+          role: u.role
+        });
+        console.log(`Default ${u.role} account created: ${u.email} / 123456`);
+      }
     }
   })
   .catch(err => console.error('MongoDB connection error:', err));

@@ -9,7 +9,7 @@ router.use(authMiddleware);
 
 router.post('/', roleMiddleware(['Admin', 'Project Manager']), createTaskValidation, validate, taskController.createTask);
 router.get('/', taskController.getTasks);
-router.put('/:id', roleMiddleware(['Admin', 'Project Manager', 'Developer', 'Tester']), updateTaskValidation, validate, taskController.updateTask);
+router.put('/:id', roleMiddleware(['Admin', 'Project Manager', 'Developer']), updateTaskValidation, validate, taskController.updateTask);
 router.delete('/:id', roleMiddleware(['Admin', 'Project Manager']), taskController.deleteTask);
 
 module.exports = router;
