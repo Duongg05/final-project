@@ -29,10 +29,11 @@ const Security: React.FC = () => {
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes('DELETE')) return 'text-red-600 bg-red-50';
-    if (action.includes('CREATE')) return 'text-green-600 bg-green-50';
-    if (action.includes('UPDATE')) return 'text-blue-600 bg-blue-50';
-    return 'text-gray-600 bg-gray-50';
+    const upperAction = action.toUpperCase();
+    if (upperAction.includes('DELETE') || upperAction.includes('ALERT') || upperAction.includes('FAIL') || upperAction.includes('UNAUTHORIZED')) return 'text-red-600 bg-red-50 border-red-200';
+    if (upperAction.includes('CREATE') || upperAction.includes('SUCCESS') || upperAction.includes('CHECKIN')) return 'text-green-600 bg-green-50 border-green-200';
+    if (upperAction.includes('UPDATE') || upperAction.includes('CHECKOUT')) return 'text-blue-600 bg-blue-50 border-blue-200';
+    return 'text-gray-600 bg-gray-50 border-gray-200';
   };
 
   const filteredLogs = logs.filter(l => 

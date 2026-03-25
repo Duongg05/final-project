@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
+const securityService = require('./securityService');
 
 class AuthService {
   async register(userData) {
@@ -54,8 +55,23 @@ class AuthService {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       user.failedLoginAttempts += 1;
+      
+      // 2-Strike Early Warning Rule for Subordinates
+      if (user.failedLoginAttempts === 2 && user.role !== 'Admin') {
+         await securityService.triggerAlert({
+           type: 'MULTIPLE_FAILED_LOGIN',
+           message: `Subordinate Employee ${user.username} (${user.role}) has failed login 2 times. Early warning alert.`,
+           userId: user._id
+         });
+      }
+
       if (user.failedLoginAttempts >= 5) {
         user.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+        await securityService.triggerAlert({
+          type: 'MULTIPLE_FAILED_LOGIN',
+          message: `Account ${user.username} is temporarily locked due to 5 consecutive failed logins.`,
+          userId: user._id
+        });
       }
       await user.save();
       throw new Error('Invalid credentials');

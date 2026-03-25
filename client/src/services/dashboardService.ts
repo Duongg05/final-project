@@ -5,7 +5,7 @@ export interface DashboardStats {
     users: number;
     projects: number;
     tasks: number;
-    logs: number;
+    securityAlerts: number;
     documents: number;
   };
   recentActivity: any[];

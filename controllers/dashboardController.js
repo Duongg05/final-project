@@ -3,21 +3,23 @@ const Project = require('../models/Project');
 const Task = require('../models/Task');
 const AuditLog = require('../models/AuditLog');
 const Document = require('../models/Document');
+const SecurityLog = require('../models/SecurityLog');
+const Alert = require('../models/Alert');
 
 exports.getStats = async (req, res) => {
   try {
-    const [userCount, projectCount, taskCount, logCount, documentCount] = await Promise.all([
+    const [userCount, projectCount, taskCount, documentCount, securityAlerts] = await Promise.all([
       User.countDocuments(),
       Project.countDocuments(),
       Task.countDocuments(),
-      AuditLog.countDocuments(),
-      Document.countDocuments()
+      Document.countDocuments(),
+      Alert.countDocuments({ status: 'Unresolved' })
     ]);
 
-    // Get recent activity (last 5 logs)
-    const recentActivity = await AuditLog.find()
+    // Get recent security activity
+    const recentActivity = await SecurityLog.find()
       .populate('userId', 'username role')
-      .sort({ timestamp: -1 })
+      .sort({ time: -1 })
       .limit(5);
 
     res.json({
@@ -25,8 +27,8 @@ exports.getStats = async (req, res) => {
         users: userCount,
         projects: projectCount,
         tasks: taskCount,
-        logs: logCount,
-        documents: documentCount
+        documents: documentCount,
+        securityAlerts
       },
       recentActivity
     });

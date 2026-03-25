@@ -32,6 +32,16 @@ exports.getDocuments = async (req, res) => {
   try {
     let query = {};
     if (req.query.projectId) query.projectId = req.query.projectId;
+    
+    // Enforce Document Permissions
+    const userRole = req.user?.role;
+    if (!['Admin', 'Project Manager', 'HR Manager'].includes(userRole)) {
+      query.$or = [
+        { classification: { $in: ['PUBLIC', 'INTERNAL'] } },
+        { classification: 'CONFIDENTIAL', uploadedBy: req.user?.id }
+      ];
+    }
+
     const docs = await Document.find(query)
       .populate('projectId', 'name projectId')
       .populate('uploadedBy', 'username');

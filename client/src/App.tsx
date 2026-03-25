@@ -31,7 +31,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/hr" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['Admin', 'HR Manager']}>
                 <HRManagement />
               </ProtectedRoute>
             } />
@@ -67,7 +67,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/security" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['Admin']}>
                 <Security />
               </ProtectedRoute>
             } />

@@ -1,5 +1,6 @@
 const Attendance = require('../models/Attendance');
 const security = require('./securityController');
+const securityService = require('../services/securityService');
 
 exports.checkIn = async (req, res) => {
   try {
@@ -13,8 +14,23 @@ exports.checkIn = async (req, res) => {
     let attendance = await Attendance.findOne({ userId, date });
     
     if (attendance) {
+      await securityService.logSecurityEvent({
+        userId,
+        action: 'DOUBLE_CHECKIN',
+        ip: req.ip || req.connection.remoteAddress,
+        details: `User attempted to check in again on ${date}`,
+        riskLevel: 'Medium'
+      });
+      await securityService.triggerAlert({
+        type: 'ABNORMAL_CHECKIN',
+        message: `Multiple check-in attempt detected for user on ${date}`,
+        userId
+      });
       return res.status(400).json({ message: 'Already checked in for today' });
     }
+
+    // Abnormal time check
+    await securityService.checkAbnormalTime(userId, req.ip || req.connection.remoteAddress, 'CHECKIN');
 
     // Determine status (Late if after 09:00 AM)
     let status = 'Present';

@@ -3,8 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { 
   Users, FolderKanban, CheckSquare, Code, 
-  FileText, Clock, ShieldAlert, TrendingUp, 
-  ArrowRight, Activity, Calendar
+  FileText, Clock, ShieldAlert, Activity, 
+  Server, Cpu, Database, HardDrive, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { getDashboardStats } from '../services/dashboardService';
@@ -32,139 +32,211 @@ const Dashboard: React.FC = () => {
   };
 
   const statCards = [
-    { name: 'Total Employees', value: stats?.counts.users || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', path: '/hr' },
-    { name: 'Active Projects', value: stats?.counts.projects || 0, icon: FolderKanban, color: 'text-indigo-600', bg: 'bg-indigo-50', path: '/projects' },
-    { name: 'Pending Tasks', value: stats?.counts.tasks || 0, icon: CheckSquare, color: 'text-green-600', bg: 'bg-green-50', path: '/tasks' },
-    { name: 'Security Logs', value: stats?.counts.logs || 0, icon: ShieldAlert, color: 'text-red-600', bg: 'bg-red-50', path: '/security' },
-  ];
-
-  const quickLinks = [
-    { name: 'Attendance', icon: Clock, color: 'bg-purple-500', path: '/attendance' },
-    { name: 'Documents', icon: FileText, color: 'bg-yellow-500', path: '/documents' },
-    { name: 'Source Code', icon: Code, color: 'bg-gray-800', path: '/source-code' },
-  ];
+    { name: 'Personnel', value: stats?.counts.users || 0, limit: 50, icon: Users, color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-800', requiredRoles: ['Admin', 'HR Manager'], path: '/hr' },
+    { name: 'Active Repositories', value: stats?.counts.projects || 0, limit: 20, icon: FolderKanban, color: 'text-indigo-400', bg: 'bg-indigo-900/20', border: 'border-indigo-800', path: '/projects' },
+    { name: 'Task Operations', value: stats?.counts.tasks || 0, limit: 100, icon: CheckSquare, color: 'text-emerald-400', bg: 'bg-emerald-900/20', border: 'border-emerald-800', path: '/tasks' },
+    { name: 'Active Threats', value: stats?.counts.securityAlerts || 0, limit: 'Critical', icon: ShieldAlert, color: 'text-rose-400', bg: 'bg-rose-900/20', border: 'border-rose-800', requiredRoles: ['Admin'], path: '/security' },
+  ].filter(card => !card.requiredRoles || card.requiredRoles.includes(user?.role || ''));
 
   if (loading) {
     return (
-      <Layout title="Dashboard">
+      <Layout title="System Telemetry">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
         </div>
       </Layout>
     );
   }
 
+  // Calculate generic security score
+  const securityScore = Math.max(0, 100 - (stats?.counts.securityAlerts || 0) * 15);
+  const isHealthy = securityScore > 80;
+
   return (
-    <Layout title={`Hello, ${user?.username} 👋`}>
-      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {/* Welcome Section */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl shadow-indigo-100">
-          <div className="relative z-10 max-w-2xl">
-            <h1 className="text-3xl font-black mb-2 tracking-tight">Software Company Management System</h1>
-            <p className="text-indigo-100 font-medium text-lg leading-relaxed">
-              Manage your team, track project progress, and maintain security logs all in one place.
+    <Layout title={`System Telemetry: ${user?.username}`}>
+      <div className="space-y-6 animate-in fade-in duration-500">
+        
+        {/* Top Header Module */}
+        <div className="bg-slate-900 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between border border-slate-800 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-slate-800/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          
+          <div className="relative z-10">
+            <h1 className="text-2xl font-mono font-bold text-white mb-2 flex items-center gap-3">
+              <Server className="w-6 h-6 text-indigo-400" />
+              SCMS Core Terminal
+            </h1>
+            <p className="text-slate-400 font-mono text-sm max-w-xl">
+              Node <span className="text-indigo-400">alpha-01</span> • Latency <span className="text-emerald-400">12ms</span> • Uptime <span className="text-slate-300">99.98%</span>
             </p>
-            <div className="mt-6 flex gap-4">
-              <Link to="/projects" className="px-6 py-2.5 bg-white text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition active:scale-95 shadow-lg shadow-black/10">
-                View Projects
-              </Link>
-              <Link to="/attendance" className="px-6 py-2.5 bg-indigo-500/30 backdrop-blur-md text-white border border-indigo-400/30 rounded-xl font-bold hover:bg-indigo-500/40 transition">
-                Log Attendance
-              </Link>
+          </div>
+          
+          <div className="relative z-10 mt-6 md:mt-0 flex items-center gap-6 bg-slate-950/50 p-4 rounded-xl border border-slate-800/50 shadow-inner">
+            <div>
+              <div className="text-xs font-mono text-slate-500 mb-1 uppercase tracking-wider">Security Posture</div>
+              <div className="flex items-center gap-3">
+                {isHealthy ? <CheckCircle2 className="w-8 h-8 text-emerald-500" /> : <AlertTriangle className="w-8 h-8 text-rose-500" />}
+                <span className={`text-4xl font-mono font-bold ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {securityScore}
+                </span>
+                <span className="text-slate-500 font-mono text-sm">/100</span>
+              </div>
             </div>
           </div>
-          {/* Decorative elements */}
-          <div className="absolute top-[-10%] right-[-5%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-[-20%] right-[10%] w-48 h-48 bg-purple-500/20 rounded-full blur-2xl"></div>
-          <TrendingUp className="absolute top-1/2 right-12 -translate-y-1/2 w-32 h-32 text-white/10" />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Telemetry Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat) => (
-            <Link key={stat.name} to={stat.path} className="group bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
-                  <stat.icon className="w-6 h-6" />
+            <Link key={stat.name} to={stat.path} className={`group bg-slate-900 p-5 rounded-2xl border ${stat.border} hover:border-slate-500 transition-all overflow-hidden relative shadow-lg`}>
+              <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bg} rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700`}></div>
+              
+              <div className="relative z-10 flex justify-between items-start mb-6">
+                <div className={`p-2.5 rounded-xl bg-slate-950/50 border border-slate-800 ${stat.color}`}>
+                  <stat.icon className="w-5 h-5" />
                 </div>
-                <div className="p-1 bg-gray-50 rounded-lg group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                  <ArrowRight className="w-4 h-4" />
+                <div className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-widest text-right">
+                  {stat.name}
                 </div>
               </div>
-              <div className="text-3xl font-extrabold text-gray-900 mb-1">{stat.value}</div>
-              <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">{stat.name}</div>
+              
+              <div className="relative z-10">
+                <div className="flex items-end gap-2">
+                  <span className="text-4xl font-mono font-bold text-white leading-none">{stat.value}</span>
+                  {typeof stat.limit === 'number' && (
+                     <span className="text-slate-500 font-mono text-sm mb-1">/ {stat.limit}</span>
+                  )}
+                </div>
+                
+                {typeof stat.limit === 'number' && (
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 mt-4 overflow-hidden">
+                    <div className={`h-1.5 rounded-full bg-current ${stat.color}`} style={{ width: `${Math.min(100, (stat.value / stat.limit) * 100)}%` }}></div>
+                  </div>
+                )}
+              </div>
             </Link>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activity */}
-          <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <Activity className="w-6 h-6 text-indigo-500" />
-                Recent System Activity
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Incident Log */}
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 font-mono">
+                <Activity className="w-5 h-5 text-indigo-500" />
+                Raw Event Stream
               </h3>
-              <Link to="/security" className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View All</Link>
+              <Link to="/security" className="text-xs font-bold text-indigo-600 hover:text-indigo-700 font-mono uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors">Full Trace</Link>
             </div>
-            <div className="flex-1">
-              <div className="divide-y divide-gray-50">
-                {stats?.recentActivity.map((log) => (
-                  <div key={log._id} className="p-4 hover:bg-gray-50/50 transition flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 shrink-0 font-bold uppercase text-xs">
-                      {log.action?.split('_')[0]}
+            
+            <div className="flex-1 bg-slate-50">
+              <div className="divide-y divide-slate-100">
+                {stats?.recentActivity?.map((log) => {
+                  const date = log.time || log.timestamp;
+                  const isAlert = log.action?.includes('FAILED') || log.action?.includes('UNAUTHORIZED') || log.type;
+                  
+                  return (
+                    <div key={log._id} className="p-4 hover:bg-white transition flex items-center gap-4 bg-white/50 group">
+                      <div className={`w-1.5 h-10 rounded-full ${isAlert ? 'bg-rose-500' : 'bg-indigo-400'}`}></div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1.5">
+                          <p className="text-sm font-bold text-slate-900 font-mono truncate mr-4">
+                            {log.details || log.message}
+                          </p>
+                          <span className="text-[10px] font-mono font-bold text-slate-400 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded border border-slate-200 group-hover:bg-indigo-50 group-hover:text-indigo-600 group-hover:border-indigo-100 transition-colors">
+                            {date ? new Date(date).toLocaleTimeString() : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border uppercase ${isAlert ? 'bg-rose-50 text-rose-600 border-rose-100' : 'text-indigo-600 bg-indigo-50 border-indigo-100'}`}>
+                            {log.action?.split('_')[0] || log.type?.split('_')[0] || 'SYSTEM'}
+                          </span>
+                          <span className="text-[11px] font-mono text-slate-500 flex items-center gap-1">
+                            <Users className="w-3 h-3" /> {log.userId?.username || 'Anonymous'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{log.details}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 font-medium flex items-center gap-2">
-                        <Users className="w-3 h-3" /> {log.userId?.username || 'System'} • {new Date(log.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-                    <div className="px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-tighter">
-                      {log.resource}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {(!stats?.recentActivity || stats.recentActivity.length === 0) && (
-                  <div className="py-20 text-center text-gray-400 font-medium">No recent activity detected.</div>
+                  <div className="py-24 text-center text-slate-400 font-mono text-sm flex flex-col items-center gap-3">
+                    <Activity className="w-8 h-8 text-slate-300" />
+                    No telemetry stream available.
+                  </div>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Quick Links & Info */}
+          {/* System Diagnostics */}
           <div className="space-y-6">
-            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Calendar className="w-6 h-6 text-purple-500" />
-                Quick Shortcuts
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-xl relative overflow-hidden">
+              <div className="absolute -bottom-10 -right-10 text-slate-800 opacity-20">
+                <Database className="w-64 h-64" />
+              </div>
+              
+              <h3 className="text-base font-bold text-white mb-6 flex items-center gap-2 font-mono">
+                <Cpu className="w-5 h-5 text-blue-400" />
+                Hardware Diagnostics
               </h3>
-              <div className="space-y-3">
-                {quickLinks.map((link) => (
-                  <Link 
-                    key={link.name} 
-                    to={link.path}
-                    className="flex items-center p-3 rounded-2xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-all group"
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${link.color} shadow-lg shadow-gray-100 group-hover:scale-110 transition-transform`}>
-                      <link.icon className="w-5 h-5" />
-                    </div>
-                    <span className="ml-4 font-bold text-gray-700">{link.name}</span>
-                    <ArrowRight className="ml-auto w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors" />
-                  </Link>
-                ))}
+              
+              <div className="space-y-5 relative z-10">
+                <div>
+                  <div className="flex justify-between text-xs font-mono font-bold text-slate-400 mb-2">
+                    <span>CPU Threading</span>
+                    <span className="text-emerald-400">24%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="bg-emerald-400 h-1.5 rounded-full" style={{ width: '24%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-xs font-mono font-bold text-slate-400 mb-2">
+                    <span>Memory Allocation</span>
+                    <span className="text-indigo-400">4.2 / 16 GB</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="bg-indigo-400 h-1.5 rounded-full" style={{ width: '30%' }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-xs font-mono font-bold text-slate-400 mb-2">
+                    <span>Cluster Storage</span>
+                    <span className="text-blue-400">89%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="bg-blue-400 h-1.5 rounded-full" style={{ width: '89%' }}></div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 relative overflow-hidden group">
-              <div className="relative z-10">
-                <h4 className="font-black text-indigo-900 mb-2">Need help?</h4>
-                <p className="text-sm text-indigo-700 font-medium mb-4">Check our documentation for system guides and best practices.</p>
-                <Link to="/documents" className="inline-flex items-center text-sm font-black text-indigo-600 hover:text-indigo-800">
-                  Documentation Hub <ArrowRight className="ml-2 w-4 h-4" />
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+              <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2 font-mono">
+                <HardDrive className="w-5 h-5 text-indigo-500" />
+                Quick Operations
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <Link to="/attendance" className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-purple-50 hover:border-purple-200 transition flex flex-col items-center justify-center text-center gap-2 group">
+                  <Clock className="w-5 h-5 text-slate-400 group-hover:text-purple-600 transition-colors" />
+                  <span className="text-xs font-bold text-slate-600 font-mono">Clock In</span>
+                </Link>
+                <Link to="/documents" className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-yellow-50 hover:border-yellow-200 transition flex flex-col items-center justify-center text-center gap-2 group">
+                  <FileText className="w-5 h-5 text-slate-400 group-hover:text-yellow-600 transition-colors" />
+                  <span className="text-xs font-bold text-slate-600 font-mono">Docs</span>
+                </Link>
+                <Link to="/source-code" className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-800 hover:border-slate-800 transition flex flex-col items-center justify-center text-center gap-2 group">
+                  <Code className="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-white font-mono transition-colors">Code</span>
+                </Link>
+                <Link to="/tasks" className="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-emerald-50 hover:border-emerald-200 transition flex flex-col items-center justify-center text-center gap-2 group">
+                  <CheckSquare className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
+                  <span className="text-xs font-bold text-slate-600 font-mono">Tasks</span>
                 </Link>
               </div>
-              <FileText className="absolute -bottom-4 -right-4 w-24 h-24 text-indigo-200/50 group-hover:rotate-12 transition-transform duration-500" />
             </div>
           </div>
         </div>

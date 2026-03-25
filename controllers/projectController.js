@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const security = require('./securityController');
+const securityService = require('../services/securityService');
 
 // Create new project
 exports.createProject = async (req, res) => {
@@ -52,6 +53,25 @@ exports.getProjectById = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id).populate('team', 'username email role');
     if (!project) return res.status(404).json({ message: 'Project not found' });
+    
+    // Privacy check: Non-Admin/PM must be part of team
+    const isMember = project.team.some(member => member._id.toString() === req.user?.id);
+    if (!['Admin', 'Project Manager'].includes(req.user?.role) && !isMember) {
+       await securityService.logSecurityEvent({
+         userId: req.user?.id,
+         action: 'UNAUTHORIZED_ACCESS',
+         ip: req.ip || req.connection.remoteAddress,
+         details: `User attempted to view a project they are not a member of: ${project.name}`,
+         riskLevel: 'High'
+       });
+       await securityService.triggerAlert({
+         type: 'UNAUTHORIZED_ACCESS',
+         message: `Insider threat: User attempting to view restricted project ${project.name}`,
+         userId: req.user?.id
+       });
+       return res.status(403).json({ message: 'Access denied: You are not a member of this project' });
+    }
+
     res.json(project);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const securityService = require('../services/securityService');
 
 exports.register = async (req, res) => {
   try {
@@ -14,8 +15,33 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
     const result = await authService.login(username, password);
     
-    res.status(200).json({ message: 'Login successful', token: result.token, user: result.user });
+    // Log success
+    await securityService.logSecurityEvent({
+      userId: result.user.id,
+      action: 'LOGIN_SUCCESS',
+      ip: req.ip || req.connection.remoteAddress,
+      details: 'User logged in successfully',
+      riskLevel: 'Low'
+    });
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    res.status(200).json({ message: 'Login successful', user: result.user });
   } catch (error) {
+    // Log failures
+    await securityService.logSecurityEvent({
+      userId: null,
+      action: 'LOGIN_FAILED',
+      ip: req.ip || req.connection.remoteAddress,
+      details: `Failed login for username: ${req.body?.username || 'unknown'}. Reason: ${error.message}`,
+      riskLevel: 'Medium'
+    });
+
     res.status(401).json({ message: error.message });
   }
 };
@@ -25,6 +51,7 @@ exports.login = async (req, res) => {
 exports.logout = async (req, res) => {
   try {
     await authService.logout(req.user.id, req.user.jti);
+    res.clearCookie('token');
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
