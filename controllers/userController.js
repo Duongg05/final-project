@@ -70,7 +70,9 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, departmentId, status, password } = req.body;
+    const { username, email, role, departmentId, status, password, currentPassword } = req.body;
+    
+    console.log('UpdateUser debug:', { reqUserId: req.user.id, paramId: id, reqUserType: typeof req.user.id, paramType: typeof id });
 
     const user = await User.findById(id);
     if (!user) {
@@ -84,6 +86,16 @@ exports.updateUser = async (req, res) => {
     if (status) user.status = status;
 
     if (password) {
+      if (req.user.id && req.user.id.toString() === id.toString()) {
+        if (!currentPassword) {
+          return res.status(400).json({ message: 'Current password is required to change your password' });
+        }
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+          return res.status(400).json({ message: 'Incorrect current password' });
+        }
+      }
+
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }

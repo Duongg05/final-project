@@ -20,6 +20,7 @@ const Login: React.FC = () => {
 
     try {
       const response = await api.post('/auth/login', { username, password });
+      
       login(response.data.token, response.data.user);
       navigate('/dashboard');
     } catch (err: any) {

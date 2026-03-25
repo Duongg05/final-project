@@ -6,14 +6,21 @@ const { validate } = require('../middlewares/validationMiddleware');
 const { createUserValidation, updateUserValidation } = require('../validations/userValidation');
 
 // Protect all user management routes
-// Only Admin and HR Manager can perform these actions
+const adminOrHR = roleMiddleware(['Admin', 'HR Manager']);
+
+const allowSelfOrAdmin = (req, res, next) => {
+  if (req.user.id === req.params.id || ['Admin', 'HR Manager'].includes(req.user.role)) {
+    return next();
+  }
+  return res.status(403).json({ message: 'Access denied: insufficient permissions' });
+};
+
 router.use(authMiddleware);
-router.use(roleMiddleware(['Admin', 'HR Manager']));
 
 // API endpoints
-router.get('/', userController.getAllUsers);
-router.post('/', createUserValidation, validate, userController.createUser);
-router.put('/:id', updateUserValidation, validate, userController.updateUser);
-router.delete('/:id', userController.deleteUser);
+router.get('/', adminOrHR, userController.getAllUsers);
+router.post('/', adminOrHR, createUserValidation, validate, userController.createUser);
+router.put('/:id', allowSelfOrAdmin, updateUserValidation, validate, userController.updateUser);
+router.delete('/:id', adminOrHR, userController.deleteUser);
 
 module.exports = router;

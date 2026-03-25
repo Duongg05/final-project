@@ -36,7 +36,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['Active', 'Inactive'],
     default: 'Active',
-  }
+  },
+  failedLoginAttempts: {
+    type: Number,
+    default: 0,
+  },
+  lockoutUntil: {
+    type: Date,
+    default: null,
+  },
+  sessionTokens: [{
+    type: String,
+  }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

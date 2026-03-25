@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 
 class AuthService {
@@ -34,7 +35,7 @@ class AuthService {
     };
   }
 
-  async login(username, password) {
+  async login(username, password, otp) {
     // Check if user exists
     const user = await User.findOne({ 
       $or: [{ username }, { email: username }] 
@@ -43,21 +44,45 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    // Check account lockout
+    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+      const remainingMinutes = Math.ceil((user.lockoutUntil - new Date()) / 1000 / 60);
+      throw new Error(`Account is temporarily locked. Please try again in ${remainingMinutes} minutes.`);
+    }
+
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      user.failedLoginAttempts += 1;
+      if (user.failedLoginAttempts >= 5) {
+        user.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+      }
+      await user.save();
       throw new Error('Invalid credentials');
     }
 
+    // Successful password, reset lock
+    if (user.failedLoginAttempts > 0 || user.lockoutUntil) {
+      user.failedLoginAttempts = 0;
+      user.lockoutUntil = null;
+      await user.save();
+    }
+
     // Generate token
+    const jti = uuidv4();
     const payload = {
       user: {
         id: user._id,
         role: user.role
-      }
+      },
+      jti
     };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+
+    // Save session
+    user.sessionTokens.push(jti);
+    await user.save();
 
     return {
       token,
@@ -68,6 +93,24 @@ class AuthService {
         role: user.role
       }
     };
+  }
+
+
+
+  async logout(userId, jti) {
+    const user = await User.findById(userId);
+    if (user) {
+      user.sessionTokens = user.sessionTokens.filter(t => t !== jti);
+      await user.save();
+    }
+  }
+
+  async logoutAll(userId) {
+    const user = await User.findById(userId);
+    if (user) {
+      user.sessionTokens = [];
+      await user.save();
+    }
   }
 }
 

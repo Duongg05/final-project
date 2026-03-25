@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { User, Mail, Shield, Lock, Save, AlertCircle } from 'lucide-react';
+import { User, Mail, Shield, Lock, Save, AlertCircle, LogOut } from 'lucide-react';
 import api from '../services/api';
 
 const Profile: React.FC = () => {
@@ -16,6 +16,17 @@ const Profile: React.FC = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+
+
+  const handleLogoutAll = async () => {
+    try {
+      await api.post('/auth/logout-all');
+      window.location.href = '/login';
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to logout from all devices' });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +110,23 @@ const Profile: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+              <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Shield className="w-5 h-5 text-indigo-500" />
+                Security Options
+              </h3>
+              
+              <div className="space-y-4">
+                <button 
+                  type="button"
+                  onClick={handleLogoutAll}
+                  className="w-full flex justify-center items-center gap-2 px-4 py-2 border border-red-200 text-red-700 bg-red-50 rounded-xl hover:bg-red-100 font-bold text-sm transition mt-4"
+                >
+                  <LogOut className="w-4 h-4" /> Logout All Devices
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="lg:col-span-2">
@@ -148,25 +176,37 @@ const Profile: React.FC = () => {
                     <Lock className="w-4 h-4 text-gray-400" />
                     Change Password
                   </h4>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase ml-1">New Password</label>
+                      <label className="text-xs font-black text-gray-400 uppercase ml-1">Current Password</label>
                       <input 
                         type="password" 
-                        placeholder="Leave blank to keep"
-                        value={formData.newPassword}
-                        onChange={e => setFormData({...formData, newPassword: e.target.value})}
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                        placeholder="Required if changing password"
+                        value={formData.currentPassword}
+                        onChange={e => setFormData({...formData, currentPassword: e.target.value})}
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium" 
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-black text-gray-400 uppercase ml-1">Confirm New Password</label>
-                      <input 
-                        type="password" 
-                        value={formData.confirmPassword}
-                        onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
-                        className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
-                      />
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-gray-400 uppercase ml-1">New Password</label>
+                        <input 
+                          type="password" 
+                          placeholder="Leave blank to keep"
+                          value={formData.newPassword}
+                          onChange={e => setFormData({...formData, newPassword: e.target.value})}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-black text-gray-400 uppercase ml-1">Confirm New Password</label>
+                        <input 
+                          type="password" 
+                          value={formData.confirmPassword}
+                          onChange={e => setFormData({...formData, confirmPassword: e.target.value})}
+                          className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -12,10 +12,31 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    const { token, user } = await authService.login(username, password);
-    res.status(200).json({ message: 'Login successful', token, user });
+    const result = await authService.login(username, password);
+    
+    res.status(200).json({ message: 'Login successful', token: result.token, user: result.user });
   } catch (error) {
     res.status(401).json({ message: error.message });
+  }
+};
+
+
+
+exports.logout = async (req, res) => {
+  try {
+    await authService.logout(req.user.id, req.user.jti);
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.logoutAll = async (req, res) => {
+  try {
+    await authService.logoutAll(req.user.id);
+    res.status(200).json({ message: 'Logged out from all devices successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
