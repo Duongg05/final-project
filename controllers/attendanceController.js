@@ -90,7 +90,7 @@ exports.getAttendance = async (req, res) => {
     let query = {};
     
     // Regular users can only see their own attendance
-    const isAdminOrHR = ['Admin', 'HR Manager', 'Project Manager'].includes(req.user.role);
+    const isAdminOrHR = ['Admin', 'HR Manager'].includes(req.user.role);
     console.log('GET Attendance - Role:', req.user.role, 'isAdminOrHR:', isAdminOrHR);
     
     if (!isAdminOrHR) {
