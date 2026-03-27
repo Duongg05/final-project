@@ -1,0 +1,13 @@
+const express = require('express');
+const router = express.Router();
+const attendanceController = require('../controllers/attendanceController');
+const { authMiddleware } = require('../middlewares/authMiddleware');
+
+router.use(authMiddleware);
+
+router.post('/checkin', attendanceController.checkIn);
+router.post('/checkout', attendanceController.checkOut);
+router.get('/today', attendanceController.getTodayStatus);
+router.get('/', attendanceController.getAttendance);
+
+module.exports = router;
