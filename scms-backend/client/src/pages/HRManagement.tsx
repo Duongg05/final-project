@@ -13,7 +13,7 @@ interface Employee {
   username: string;
   email: string;
   role: string;
-  departmentId?: string;
+  department?: string;
   status: string;
 }
 
@@ -33,6 +33,7 @@ const HRManagement: React.FC = () => {
     email: '',
     password: '',
     role: 'Developer',
+    department: 'NONE',
     status: 'Active'
   });
 
@@ -69,7 +70,7 @@ const HRManagement: React.FC = () => {
 
   const openAddModal = () => {
     setEditingEmployee(null);
-    setFormData({ username: '', email: '', password: '', role: 'Developer', status: 'Active' });
+    setFormData({ username: '', email: '', password: '', role: 'Developer', department: 'NONE', status: 'Active' });
     setIsModalOpen(true);
   };
 
@@ -80,6 +81,7 @@ const HRManagement: React.FC = () => {
       email: emp.email, 
       password: '', 
       role: emp.role || 'Developer', 
+      department: emp.department || 'NONE',
       status: emp.status || 'Active' 
     });
     setIsModalOpen(true);
@@ -236,12 +238,22 @@ const HRManagement: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
+                    <option value="NONE">None</option>
+                    <option value="HR">HR</option>
+                    <option value="DEV">DEV</option>
+                    <option value="SALES">SALES</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Locked">Locked</option>
+                </select>
               </div>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-xl transition">Cancel</button>

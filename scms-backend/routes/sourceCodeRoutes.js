@@ -3,6 +3,9 @@ const router = express.Router();
 const sourceCodeController = require('../controllers/sourceCodeController');
 const { authMiddleware, roleMiddleware } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
+const { auditMiddleware } = require('../middlewares/auditMiddleware');
+const { checkPermission } = require('../middlewares/permissionMiddleware');
+const { downloadAnomalyMiddleware } = require('../middlewares/downloadAnomalyMiddleware');
 const rateLimit = require('express-rate-limit');
 const securityService = require('../services/securityService');
 
@@ -27,9 +30,12 @@ const downloadSpikeLimiter = rateLimit({
 });
 
 router.use(authMiddleware);
+router.use(auditMiddleware('SOURCE_CODE_API'));
+router.use(checkPermission(['DEV']));
 
 router.post('/', roleMiddleware(['Admin', 'Project Manager', 'Developer']), upload.single('sourceCode'), sourceCodeController.createSourceCode);
 router.get('/', downloadSpikeLimiter, sourceCodeController.getSourceCodes);
+router.get('/:id/download', downloadAnomalyMiddleware, sourceCodeController.downloadSourceCode);
 router.put('/:id', roleMiddleware(['Admin', 'Project Manager', 'Developer']), upload.single('sourceCode'), sourceCodeController.updateSourceCode);
 router.delete('/:id', roleMiddleware(['Admin', 'Project Manager']), sourceCodeController.deleteSourceCode);
 

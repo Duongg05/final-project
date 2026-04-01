@@ -9,6 +9,7 @@ import type { AuditLogData } from '../services/securityService';
 
 const Security: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogData[]>([]);
+  const [metrics, setMetrics] = useState({ activeThreats: 0, securityPosture: 100 });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -20,7 +21,8 @@ const Security: React.FC = () => {
     try {
       setLoading(true);
       const data = await getAuditLogs();
-      setLogs(data);
+      setLogs(data.logs);
+      setMetrics(data.metrics);
     } catch (error) {
       console.error('Failed to fetch logs', error);
     } finally {
@@ -28,13 +30,7 @@ const Security: React.FC = () => {
     }
   };
 
-  const getActionColor = (action: string) => {
-    const upperAction = action.toUpperCase();
-    if (upperAction.includes('DELETE') || upperAction.includes('ALERT') || upperAction.includes('FAIL') || upperAction.includes('UNAUTHORIZED')) return 'text-red-600 bg-red-50 border-red-200';
-    if (upperAction.includes('CREATE') || upperAction.includes('SUCCESS') || upperAction.includes('CHECKIN')) return 'text-green-600 bg-green-50 border-green-200';
-    if (upperAction.includes('UPDATE') || upperAction.includes('CHECKOUT')) return 'text-blue-600 bg-blue-50 border-blue-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
-  };
+
 
   const filteredLogs = logs.filter(l => 
     l.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,8 +64,17 @@ const Security: React.FC = () => {
               <Lock className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Access Level</div>
-              <div className="text-xl font-bold text-gray-900 leading-tight">Admin Only</div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Active Threats</div>
+              <div className="text-xl font-bold text-gray-900 leading-tight">{metrics.activeThreats} Today</div>
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${metrics.securityPosture >= 80 ? 'bg-green-50 text-green-600' : metrics.securityPosture >= 50 ? 'bg-yellow-50 text-yellow-600' : 'bg-red-50 text-red-600'}`}>
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-400 uppercase">Security Posture</div>
+              <div className="text-xl font-bold text-gray-900 leading-tight tracking-wide">{metrics.securityPosture}/100</div>
             </div>
           </div>
         </div>
@@ -78,7 +83,7 @@ const Security: React.FC = () => {
           <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <Terminal className="w-5 h-5 text-gray-400" />
-              Audit Trait
+              Raw Event Stream
             </h3>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
@@ -97,15 +102,15 @@ const Security: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Action</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Resource</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">User</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Event</th>
                   <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 inline-block"></div></td></tr>
+                  <tr><td colSpan={4} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 inline-block"></div></td></tr>
                 ) : filteredLogs.map(log => (
                   <tr key={log._id} className="hover:bg-gray-50/50 transition">
                     <td className="px-6 py-4">
@@ -117,19 +122,18 @@ const Security: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${getActionColor(log.action)}`}>
-                        {log.action}
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${log.status === 'blocked' || log.status === 'failed' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-green-50 text-green-600 border-green-200'}`}>
+                        {log.status || 'info'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 font-medium">{log.resource}</td>
-                    <td className="px-6 py-4 text-sm text-gray-400 truncate max-w-[200px]">{log.details}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 font-medium">User {log.userId?.username || 'Unknown'} {log.message}</td>
                     <td className="px-6 py-4 text-[11px] font-mono text-gray-400">
-                      {new Date(log.timestamp).toLocaleString()}
+                      {new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </td>
                   </tr>
                 ))}
                 {!loading && filteredLogs.length === 0 && (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic">No security logs found.</td></tr>
+                  <tr><td colSpan={4} className="px-6 py-20 text-center text-gray-400 italic">No security logs found.</td></tr>
                 )}
               </tbody>
             </table>

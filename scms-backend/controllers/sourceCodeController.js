@@ -71,3 +71,12 @@ exports.deleteSourceCode = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+exports.downloadSourceCode = async (req, res) => {
+  try {
+    const repo = await SourceCode.findById(req.params.id);
+    if (!repo) return res.status(404).json({ message: 'Repository not found' });
+    res.json({ url: repo.repoUrl });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -4,7 +4,7 @@ import {
   Plus, Github, ExternalLink, Trash2, 
   GitBranch, Tag, FolderKanban
 } from 'lucide-react';
-import { getSourceCodes, createSourceCode, deleteSourceCode } from '../services/sourceCodeService';
+import { getSourceCodes, createSourceCode, deleteSourceCode, downloadSourceCode } from '../services/sourceCodeService';
 import type { SourceCodeData } from '../services/sourceCodeService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
@@ -73,6 +73,16 @@ const SourceCode: React.FC = () => {
     }
   };
 
+  const handleDownload = async (repo: SourceCodeData) => {
+    try {
+      if (!repo._id) return;
+      const res = await downloadSourceCode(repo._id);
+      window.open(res.url, '_blank');
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Error accessing repository', 'error');
+    }
+  };
+
   return (
     <Layout title="Source Code">
       <div className="space-y-6">
@@ -129,15 +139,13 @@ const SourceCode: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <a 
-                    href={repo.repoUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                  <button 
+                    onClick={() => handleDownload(repo)}
                     className="flex items-center justify-center w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 transition"
                   >
                     View Repository
                     <ExternalLink className="w-4 h-4 ml-2" />
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}

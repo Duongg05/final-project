@@ -118,7 +118,7 @@ exports.getAttendance = async (req, res) => {
     if (req.query.date) query.date = req.query.date;
 
     const history = await Attendance.find(query)
-      .populate('userId', 'username email role departmentId')
+      .populate('userId', 'username email role department')
       .sort({ date: -1, createdAt: -1 });
     res.json(history);
   } catch (error) {

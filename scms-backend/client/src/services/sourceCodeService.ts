@@ -24,3 +24,8 @@ export const deleteSourceCode = async (id: string) => {
   const response = await api.delete(`/source-code/${id}`);
   return response.data;
 };
+
+export const downloadSourceCode = async (id: string) => {
+  const response = await api.get(`/source-code/${id}/download`);
+  return response.data;
+};

@@ -4,7 +4,7 @@ import {
   FilePlus, FileText, Trash2, 
   ExternalLink, User
 } from 'lucide-react';
-import { getDocuments, createDocument, deleteDocument } from '../services/documentService';
+import { getDocuments, createDocument, deleteDocument, downloadDocument } from '../services/documentService';
 import type { DocumentData } from '../services/documentService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
@@ -74,6 +74,16 @@ const Documents: React.FC = () => {
     }
   };
 
+  const handleDownload = async (doc: DocumentData) => {
+    try {
+      if (!doc._id) return;
+      const res = await downloadDocument(doc._id);
+      window.open(res.url, '_blank');
+    } catch (error: any) {
+      showToast(error.response?.data?.message || 'Error downloading document', 'error');
+    }
+  };
+
   return (
     <Layout title="Documents">
       <div className="space-y-6">
@@ -138,9 +148,9 @@ const Documents: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                          <button onClick={() => handleDownload(doc)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
                             <ExternalLink className="w-4 h-4" />
-                          </a>
+                          </button>
                           <button onClick={() => handleDelete(doc._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
                             <Trash2 className="w-4 h-4" />
                           </button>

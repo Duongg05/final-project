@@ -4,7 +4,7 @@ const security = require('./securityController');
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const { search, role, status, departmentId } = req.query;
+    const { search, role, status, department } = req.query;
 
     let query = {};
 
@@ -17,7 +17,7 @@ exports.getAllUsers = async (req, res) => {
 
     if (role) query.role = role;
     if (status) query.status = status;
-    if (departmentId) query.departmentId = departmentId;
+    if (department) query.department = department;
 
     const users = await User.find(query).select('-password').sort({ createdAt: -1 });
     res.status(200).json(users);
@@ -28,7 +28,7 @@ exports.getAllUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, password, role, departmentId, status } = req.body;
+    const { username, email, password, role, department, status } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
@@ -47,7 +47,7 @@ exports.createUser = async (req, res) => {
       email,
       ...(hashedPassword && { password: hashedPassword }),
       role: role || 'Employee',
-      departmentId: departmentId || null,
+      department: department || 'NONE',
       status: status || 'Active'
     });
 
@@ -73,7 +73,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, departmentId, status, password, currentPassword } = req.body;
+    const { username, email, role, department, status, password, currentPassword } = req.body;
     
     console.log('UpdateUser debug:', { reqUserId: req.user.id, paramId: id, reqUserType: typeof req.user.id, paramType: typeof id });
 
@@ -85,7 +85,7 @@ exports.updateUser = async (req, res) => {
     if (username) user.username = username;
     if (email) user.email = email;
     if (role) user.role = role;
-    if (departmentId !== undefined) user.departmentId = departmentId;
+    if (department !== undefined) user.department = department;
     if (status) user.status = status;
 
     if (password) {

@@ -3,6 +3,8 @@ const router = express.Router();
 const documentController = require('../controllers/documentController');
 const { authMiddleware, roleMiddleware } = require('../middlewares/authMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
+const { auditMiddleware } = require('../middlewares/auditMiddleware');
+const { downloadAnomalyMiddleware } = require('../middlewares/downloadAnomalyMiddleware');
 const rateLimit = require('express-rate-limit');
 const securityService = require('../services/securityService');
 
@@ -27,9 +29,11 @@ const documentSpikeLimiter = rateLimit({
 });
 
 router.use(authMiddleware);
+router.use(auditMiddleware('DOCUMENT_API'));
 
 router.post('/', roleMiddleware(['Admin', 'Project Manager', 'Developer']), upload.single('document'), documentController.createDocument);
 router.get('/', documentSpikeLimiter, documentController.getDocuments);
+router.get('/:id/download', downloadAnomalyMiddleware, documentController.downloadDocument);
 router.delete('/:id', roleMiddleware(['Admin', 'Project Manager']), documentController.deleteDocument);
 
 module.exports = router;

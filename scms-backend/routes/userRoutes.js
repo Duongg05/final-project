@@ -4,6 +4,7 @@ const userController = require('../controllers/userController');
 const { authMiddleware, roleMiddleware } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
 const { createUserValidation, updateUserValidation } = require('../validations/userValidation');
+const { auditMiddleware } = require('../middlewares/auditMiddleware');
 
 // Protect all user management routes
 const adminOrHR = roleMiddleware(['Admin', 'HR Manager']);
@@ -31,6 +32,7 @@ const allowSelfOrAdmin = async (req, res, next) => {
 };
 
 router.use(authMiddleware);
+router.use(auditMiddleware('USER_API'));
 
 // API endpoints
 router.get('/', adminOrHR, userController.getAllUsers);

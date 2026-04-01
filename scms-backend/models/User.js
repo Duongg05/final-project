@@ -23,10 +23,10 @@ const userSchema = new mongoose.Schema({
     enum: ['Admin', 'HR Manager', 'Project Manager', 'Developer', 'Tester', 'Viewer', 'Employee'], // Also added Employee just in case
     default: 'Developer',
   },
-  departmentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Department',
-    default: null
+  department: {
+    type: String,
+    enum: ['HR', 'DEV', 'SALES', 'NONE'],
+    default: 'NONE'
   },
   joinDate: {
     type: Date,
@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Active', 'Inactive'],
+    enum: ['Active', 'Inactive', 'Locked'],
     default: 'Active',
   },
   failedLoginAttempts: {

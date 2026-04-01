@@ -4,42 +4,56 @@ const Alert = require('../models/Alert');
 
 exports.getAuditLogs = async (req, res) => {
   try {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(todayStr);
+
     const [auditLogs, securityLogs, alerts] = await Promise.all([
-      AuditLog.find().populate('userId', 'username role').sort({ timestamp: -1 }).limit(100).lean(),
-      SecurityLog.find().populate('userId', 'username role').sort({ time: -1 }).limit(100).lean(),
-      Alert.find().populate('userId', 'username role').sort({ timestamp: -1 }).limit(100).lean()
+      AuditLog.find().populate('userId', 'username').sort({ timestamp: -1 }).limit(100).lean(),
+      SecurityLog.find().populate('userId', 'username').sort({ time: -1 }).limit(10).lean(),
+      Alert.find().populate('userId', 'username').sort({ timestamp: -1 }).limit(10).lean()
     ]);
 
+    // Calculate Active Threats & Security Posture (Today only)
+    let activeThreats = 0;
+    let securityPosture = 100;
+
+    auditLogs.forEach(log => {
+      if (new Date(log.timestamp) >= startOfDay) {
+        if (log.status === 'blocked' || log.status === 'failed') {
+          activeThreats++;
+        }
+        if (log.action === 'ANOMALY_DETECTED') {
+          securityPosture -= 10;
+        } else if (log.action === 'ACCESS_DENIED_ATTEMPT') {
+          securityPosture -= 5;
+        }
+      }
+    });
+
+    if (securityPosture < 0) securityPosture = 0; // Cap at 0
+
     const unifiedLogs = [
-      ...auditLogs.map(log => ({
-        _id: log._id,
-        userId: log.userId,
-        action: log.action,
-        resource: log.resource,
-        details: log.details,
-        timestamp: log.timestamp
-      })),
-      ...securityLogs.map(log => ({
-        _id: log._id,
-        userId: log.userId,
-        action: log.action,
-        resource: 'Security Core',
-        details: log.details,
-        timestamp: log.time
-      })),
-      ...alerts.map(log => ({
-        _id: log._id,
-        userId: log.userId,
-        action: `ALERT: ${log.type}`,
-        resource: 'Threat Detection',
-        details: log.message,
-        timestamp: log.timestamp
-      }))
+      ...auditLogs.map(log => {
+        let text = `${log.action} on ${log.resource}`;
+        if (log.action === 'DOWNLOAD_SUCCESS') text = `downloaded ${log.resource}`;
+        return {
+          _id: log._id,
+          userId: log.userId,
+          action: log.action,
+          status: log.status,
+          message: text,
+          timestamp: log.timestamp
+        };
+      })
     ];
 
-    unifiedLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    res.json(unifiedLogs.slice(0, 100));
+    res.json({
+      metrics: {
+        activeThreats,
+        securityPosture
+      },
+      logs: unifiedLogs
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
