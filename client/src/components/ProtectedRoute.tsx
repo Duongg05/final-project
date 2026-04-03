@@ -13,8 +13,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-brand-cream space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-brown"></div>
+        <p className="text-[0.7rem] font-black text-brand-brown/40 uppercase tracking-widest animate-pulse">Verifying Credentials...</p>
       </div>
     );
   }

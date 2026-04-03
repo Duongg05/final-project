@@ -15,10 +15,17 @@ const loginLimiter = rateLimit({
 });
 
 // Authentication routes
-router.post('/register', registerValidation, validate, authController.register);
+// Registration disabled - Only Admin can create users through HR Management
+// router.post('/register', registerValidation, validate, authController.register);
+
 router.post('/login', loginLimiter, loginValidation, validate, authController.login);
 router.get('/me', authMiddleware, authController.me);
 router.post('/logout', authMiddleware, authController.logout);
 router.post('/logout-all', authMiddleware, authController.logoutAll);
 
+// OTP routes
+router.post('/request-otp', authController.requestOtp);
+router.post('/verify-otp', authController.verifyOtp);
+
 module.exports = router;
+

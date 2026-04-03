@@ -8,9 +8,11 @@ import { getSourceCodes, createSourceCode, deleteSourceCode } from '../services/
 import type { SourceCodeData } from '../services/sourceCodeService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 const SourceCode: React.FC = () => {
+  const { user } = useAuth();
   const { showToast } = useToast();
   const [repos, setRepos] = useState<SourceCodeData[]>([]);
   const [projects, setProjects] = useState<ProjectData[]>([]);
@@ -39,7 +41,7 @@ const SourceCode: React.FC = () => {
       setProjects(projectsData);
     } catch (error) {
       console.error('Failed to fetch data', error);
-      showToast('Failed to fetch data', 'error');
+      showToast('Telemetry sync failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -49,82 +51,91 @@ const SourceCode: React.FC = () => {
     e.preventDefault();
     try {
       await createSourceCode(newRepo as SourceCodeData);
-      showToast('Repository added successfully', 'success');
+      showToast('Repository node initialized', 'success');
       setIsModalOpen(false);
       setNewRepo({ repoName: '', repoUrl: '', branch: 'main', description: '', projectId: '' });
       fetchData();
     } catch (error) {
       console.error('Error adding repository:', error);
-      showToast('Error adding repository', 'error');
+      showToast('Initialization error', 'error');
     }
   };
 
   const handleDelete = async (id: string | undefined) => {
     if (!id) return;
-    if (window.confirm('Delete this repository link?')) {
+    if (window.confirm('Purge this repository sequence from the registry?')) {
       try {
         await deleteSourceCode(id);
-        showToast('Repository deleted successfully', 'success');
+        showToast('Sequence purged', 'success');
         fetchData();
       } catch (error) {
         console.error('Error deleting repository:', error);
-        showToast('Error deleting repository', 'error');
+        showToast('Purge failed', 'error');
       }
     }
   };
 
   return (
-    <Layout title="Source Code">
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
+    <Layout title="Repository Control">
+      <div className="space-y-[2.5rem] animate-in fade-in duration-1000">
+        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Repositories</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage project source code and repository links.</p>
+            <h1 className="text-[2.2rem] font-[900] text-brand-brown tracking-[-0.04em] leading-none">Code Infrastructure</h1>
+            <p className="text-brand-brown/40 text-[0.8rem] font-[700] mt-3 uppercase tracking-widest">Version Control Clusters & Distributed Sources</p>
           </div>
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black transition"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add Repository
-          </button>
+          {['Admin', 'Project Manager', 'Developer'].includes(user?.role || '') && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center px-[2rem] py-[1rem] bg-brand-brown text-white rounded-full text-[0.8rem] font-black uppercase tracking-widest shadow-xl shadow-brand-brown/20 hover:scale-[1.05] transition-all active:scale-[0.95]"
+            >
+              <Plus className="w-5 h-5 mr-3" />
+              Initialize Repo
+            </button>
+          )}
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-brown"></div>
+            <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest animate-pulse">Mapping Code Vectors...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {repos.map(repo => (
-              <div key={repo._id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden">
-                <div className="p-5 border-b border-gray-100 bg-gray-50/30">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-                      <Github className="w-6 h-6 text-gray-700" />
+              <div key={repo._id} className="bg-white rounded-[2.5rem] border border-brand-brown/5 shadow-sm hover:shadow-[0_20px_50px_rgba(61,43,31,0.08)] transition-all duration-700 overflow-hidden group">
+                <div className="p-8 border-b border-brand-brown/5 bg-brand-cream/10 flex justify-between items-start">
+                  <div className="flex items-center gap-5">
+                    <div className="p-4 bg-white rounded-2xl border border-brand-brown/5 shadow-sm text-brand-brown group-hover:bg-brand-brown group-hover:text-white transition-all duration-500">
+                      <Github className="w-7 h-7" />
                     </div>
-                    <button onClick={() => handleDelete(repo._id)} className="text-gray-400 hover:text-red-600 transition">
-                      <Trash2 className="w-4 h-4" />
+                    <div>
+                        <h3 className="text-[1.1rem] font-[800] text-brand-brown tracking-tight truncate max-w-[150px]">{repo.repoName}</h3>
+                        <div className="flex items-center text-[0.6rem] font-black text-brand-brown/30 uppercase tracking-widest mt-1">
+                            <FolderKanban className="w-3 h-3 mr-2" />
+                            {repo.projectId?.name || 'Unassigned Cluster'}
+                        </div>
+                    </div>
+                  </div>
+                  {['Admin', 'Project Manager'].includes(user?.role || '') && (
+                    <button onClick={() => handleDelete(repo._id)} className="p-2 text-brand-brown/10 hover:text-rose-500 transition-colors">
+                        <Trash2 className="w-4 h-4" />
                     </button>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 truncate">{repo.repoName}</h3>
-                  <div className="flex items-center text-xs text-gray-500 mt-1">
-                    <FolderKanban className="w-3 h-3 mr-1" />
-                    {repo.projectId?.name || 'Unassigned'}
-                  </div>
+                  )}
                 </div>
-                <div className="p-5">
-                  <p className="text-sm text-gray-600 line-clamp-2 h-10 mb-4">
-                    {repo.description || 'No description provided.'}
+                <div className="p-8">
+                  <p className="text-[0.85rem] font-[600] text-brand-brown/50 line-clamp-2 h-12 mb-6 leading-relaxed">
+                    {repo.description || 'No operational abstract provided for this node.'}
                   </p>
-                  <div className="flex items-center gap-4 text-xs font-medium text-gray-500 mb-5">
+                  <div className="flex items-center gap-6 text-[0.7rem] font-black text-brand-brown/30 uppercase tracking-[0.2em] mb-8">
                     <div className="flex items-center">
-                      <GitBranch className="w-4 h-4 mr-1 text-gray-400" />
+                      <GitBranch className="w-4 h-4 mr-2 text-brand-brown/20" />
                       {repo.branch}
                     </div>
                     {repo.tags && repo.tags.length > 0 && (
-                      <div className="flex items-center uppercase tracking-wider">
-                        <Tag className="w-4 h-4 mr-1 text-gray-400" />
+                      <div className="flex items-center">
+                        <Tag className="w-4 h-4 mr-2 text-brand-brown/20" />
                         {repo.tags[0]}
                       </div>
                     )}
@@ -133,82 +144,94 @@ const SourceCode: React.FC = () => {
                     href={repo.repoUrl} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100 transition"
+                    className="flex items-center justify-center w-full px-6 py-4 bg-brand-cream/30 border border-brand-brown/5 rounded-full text-[0.7rem] font-black text-brand-brown uppercase tracking-widest hover:bg-brand-brown hover:text-white transition-all shadow-sm"
                   >
-                    View Repository
-                    <ExternalLink className="w-4 h-4 ml-2" />
+                    Establish Uplink
+                    <ExternalLink className="w-4 h-4 ml-3" />
                   </a>
                 </div>
               </div>
             ))}
+            {repos.length === 0 && (
+              <div className="col-span-full text-center py-32 bg-white rounded-[3rem] border border-dashed border-brand-brown/10 text-brand-brown/20 font-[800] uppercase tracking-widest text-[0.9rem] italic">
+                No code infrastructure mapped in this sector.
+              </div>
+            )}
           </div>
         )}
 
+        {/* Add Repository Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">Add Repository</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✕</button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-brand-brown/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden relative z-10 border border-brand-brown/5 animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
+              <div className="px-10 py-8 border-b border-brand-brown/5 flex justify-between items-center bg-brand-cream/20">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Repo Name</label>
+                    <h2 className="text-[1.8rem] font-[900] text-brand-brown tracking-[-0.03em]">Initialize Node</h2>
+                    <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest">Global code repository definition</p>
+                </div>
+                <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full flex items-center justify-center text-brand-brown/20 hover:text-brand-brown hover:bg-brand-cream transition-all font-black">✕</button>
+              </div>
+              <form onSubmit={handleSubmit} className="p-10 space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Sequence Designation</label>
                   <input
                     type="text"
                     required
                     value={newRepo.repoName}
                     onChange={e => setNewRepo({...newRepo, repoName: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="e.g., scms-core-backend"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
+                    placeholder="e.g., core-infrastructure-backend"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Repo URL</label>
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Source DNA (URL)</label>
                   <input
                     type="url"
                     required
                     value={newRepo.repoUrl}
                     onChange={e => setNewRepo({...newRepo, repoUrl: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-gray-900"
-                    placeholder="https://github.com/user/repo"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
+                    placeholder="https://github.com/org/repo-sequence"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Project</label>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Target Cluster</label>
                     <select
                       required
                       value={newRepo.projectId as string}
                       onChange={e => setNewRepo({...newRepo, projectId: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
                     >
                       <option value="">Select Project</option>
                       {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Default Branch</label>
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Primary Branch</label>
                     <input
                       type="text"
                       value={newRepo.branch}
                       onChange={e => setNewRepo({...newRepo, branch: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-gray-900"
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Operational Abstract</label>
                   <textarea
                     rows={2}
                     value={newRepo.description}
                     onChange={e => setNewRepo({...newRepo, description: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-gray-900 resize-none h-20"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none h-24 resize-none transition-all"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">Cancel</button>
-                  <button type="submit" className="px-5 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-black shadow-md transition">Add Link</button>
+                <div className="flex justify-end gap-5 pt-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 text-brand-brown/30 text-[0.7rem] font-black uppercase tracking-widest hover:text-brand-brown transition-colors">Abort</button>
+                  <button type="submit" className="px-10 py-4 bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-full shadow-2xl shadow-brand-brown/30 hover:scale-[1.05] active:scale-[0.95] transition-all">
+                    Link sequence
+                  </button>
                 </div>
               </form>
             </div>

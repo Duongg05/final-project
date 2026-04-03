@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Lock, User, Mail, AlertCircle, Briefcase } from 'lucide-react';
+import { Lock, User, Mail, AlertCircle, Briefcase, ArrowRight } from 'lucide-react';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,7 +23,7 @@ const Register: React.FC = () => {
       await api.post('/auth/register', formData);
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || 'Registration failed. Please verify node parameters.');
     } finally {
       setLoading(false);
     }
@@ -37,111 +37,124 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 px-4 py-8">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-6">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">Create Account</h2>
-          <p className="mt-2 text-sm text-gray-500">Join SCMS today</p>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-brand-cream py-12 px-6">
+      {/* Warm Earthy Background Effects */}
+      <div className="absolute top-0 -left-20 w-[40rem] h-[40rem] bg-brand-brown/5 rounded-full blur-[120px] animate-pulse"></div>
+      <div className="absolute bottom-0 -right-20 w-[40rem] h-[40rem] bg-brand-accent/5 rounded-full blur-[120px] animate-pulse delay-700"></div>
+
+      <div className="max-w-lg w-full relative z-10">
+        {/* Branding */}
+        <div className="text-center mb-10 flex flex-col items-center">
+            <div className="w-[4.5rem] h-[4.5rem] bg-[#3D2B1F] rounded-full flex items-center justify-center shadow-xl mb-6">
+              <svg viewBox="0 0 24 24" className="w-[2.2rem] h-[2.2rem] text-white fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3L14 10L21 12L14 14L12 21L10 14L3 12L10 10L12 3Z" fill="white" />
+                <path d="M18 4V8M16 6H20" stroke="white" strokeWidth="2.5" />
+                <circle cx="10" cy="18" r="1.5" fill="white" stroke="none" />
+              </svg>
+            </div>
+            <h1 className="text-[2.8rem] font-[900] text-[#3D2B1F] tracking-[-0.05em] leading-none mb-2">iHeal</h1>
+            <p className="text-[#3D2B1F]/30 text-[0.7rem] font-[800] uppercase tracking-[0.2em]">Secured Infrastructure Node</p>
         </div>
 
-        {error && (
-          <div className="bg-red-50 p-4 rounded-lg flex items-center text-red-700 text-sm">
-            <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Username</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                name="username"
-                required
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-                placeholder="johndoe"
-                value={formData.username}
-                onChange={handleChange}
-              />
+        <div className="bg-white rounded-[3rem] border border-brand-brown/5 shadow-2xl p-12">
+          {error && (
+            <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-center text-rose-600 text-[0.8rem] font-bold mb-8">
+              <AlertCircle className="w-5 h-5 mr-3 flex-shrink-0" />
+              <span>{error}</span>
             </div>
-          </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="email"
-                name="email"
-                required
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
+          <form className="space-y-8" onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Designation</label>
+                    <div className="relative group">
+                        <User className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-brown/10 group-focus-within:text-brand-brown transition-colors" />
+                        <input
+                            type="text"
+                            name="username"
+                            required
+                            className="w-full bg-brand-cream/30 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-4 text-brand-brown text-[0.9rem] font-bold focus:outline-none focus:ring-4 focus:ring-brand-brown/5 transition-all"
+                            placeholder="johndoe"
+                            value={formData.username}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+
+                <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Vector Address</label>
+                    <div className="relative group">
+                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-brown/10 group-focus-within:text-brand-brown transition-colors" />
+                        <input
+                            type="email"
+                            name="email"
+                            required
+                            className="w-full bg-brand-cream/30 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-4 text-brand-brown text-[0.9rem] font-bold focus:outline-none focus:ring-4 focus:ring-brand-brown/5 transition-all"
+                            placeholder="john@iheal.corp"
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Briefcase className="h-5 w-5 text-gray-400" />
+            <div className="space-y-3">
+              <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Authority Clearance</label>
+              <div className="relative group">
+                <Briefcase className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-brown/10 group-focus-within:text-brand-brown transition-colors" />
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full bg-brand-cream/30 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-4 text-brand-brown text-[0.8rem] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-brand-brown/5 appearance-none cursor-pointer"
+                >
+                  <option value="Admin">Admin Clearance</option>
+                  <option value="HR Manager">Human Resources</option>
+                  <option value="Project Manager">Project Management</option>
+                  <option value="Developer">Engineering Unit</option>
+                  <option value="Tester">Quality Assurance</option>
+                  <option value="Viewer">Observer Status</option>
+                </select>
               </div>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-              >
-                <option value="Admin">Admin</option>
-                <option value="HR Manager">HR Manager</option>
-                <option value="Project Manager">Project Manager</option>
-                <option value="Developer">Developer</option>
-                <option value="Tester">Tester</option>
-                <option value="Viewer">Viewer</option>
-              </select>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+            <div className="space-y-3">
+              <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Secure Signature</label>
+              <div className="relative group">
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-brown/10 group-focus-within:text-brand-brown transition-colors" />
+                <input
+                  type="password"
+                  name="password"
+                  required
+                  className="w-full bg-brand-cream/30 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-4 text-brand-brown text-[0.9rem] font-bold focus:outline-none focus:ring-4 focus:ring-brand-brown/5 transition-all"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                />
               </div>
-              <input
-                type="password"
-                name="password"
-                required
-                className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-              />
             </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 py-4 bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-brand-brown/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+            >
+              {loading ? 'Initializing Interface...' : (
+                <>
+                  Process Enrollment
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-10 text-center pt-8 border-t border-brand-brown/5">
+            <span className="text-brand-brown/30 text-[0.7rem] font-[800] uppercase tracking-widest">Linked Identity? </span>
+            <Link to="/login" className="text-[0.7rem] font-black uppercase tracking-widest text-brand-brown hover:opacity-70 transition-opacity">
+              Navigate back to console
+            </Link>
           </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <div className="text-center text-sm">
-          <span className="text-gray-500">Already have an account? </span>
-          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-            Sign in
-          </Link>
         </div>
       </div>
     </div>

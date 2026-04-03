@@ -86,3 +86,52 @@ exports.me = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.requestOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email là bắt buộc' });
+
+    const result = await authService.requestOtp(email);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: 'Email và OTP là bắt buộc' });
+
+    const result = await authService.verifyOtp(email, otp);
+
+    // Log success
+    await securityService.logSecurityEvent({
+      userId: result.user.id,
+      action: 'LOGIN_SUCCESS',
+      ip: req.ip || req.connection.remoteAddress,
+      details: 'User logged in successfully via OTP',
+      riskLevel: 'Low'
+    });
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
+    res.status(200).json({ message: 'Đăng nhập thành công', user: result.user });
+  } catch (error) {
+    await securityService.logSecurityEvent({
+      userId: null,
+      action: 'LOGIN_FAILED',
+      ip: req.ip || req.connection.remoteAddress,
+      details: `Failed OTP login for email: ${req.body?.email || 'unknown'}. Reason: ${error.message}`,
+      riskLevel: 'Medium'
+    });
+    res.status(401).json({ message: error.message });
+  }
+};
+

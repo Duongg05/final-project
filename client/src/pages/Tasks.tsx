@@ -7,29 +7,31 @@ import { getTasks, createTask, updateTask, deleteTask } from '../services/taskSe
 import type { TaskData } from '../services/taskService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
-const getStatusColor = (status: string) => {
+const getStatusStyles = (status: string) => {
   switch (status) {
-    case 'Completed': return 'bg-green-100 text-green-700 border-green-200';
-    case 'In Progress': return 'bg-blue-100 text-blue-700 border-blue-200';
-    case 'Testing': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    case 'Todo': return 'bg-gray-100 text-gray-700 border-gray-200';
-    default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    case 'Completed': return 'bg-brand-cream text-brand-brown border-brand-brown/10';
+    case 'In Progress': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+    case 'Testing': return 'bg-amber-50 text-amber-600 border-amber-100';
+    case 'Todo': return 'bg-brand-brown/5 text-brand-brown/40 border-brand-brown/5';
+    default: return 'bg-gray-50 text-gray-400 border-gray-100';
   }
 };
 
-const getPriorityColor = (priority: string) => {
+const getPriorityStyles = (priority: string) => {
   switch (priority) {
-    case 'Critical': return 'text-red-600 bg-red-50';
+    case 'Critical': return 'text-rose-600 bg-rose-50';
     case 'High': return 'text-orange-600 bg-orange-50';
-    case 'Medium': return 'text-blue-600 bg-blue-50';
-    case 'Low': return 'text-gray-600 bg-gray-50';
-    default: return 'text-gray-600 bg-gray-50';
+    case 'Medium': return 'text-brand-brown bg-brand-cream';
+    case 'Low': return 'text-brand-brown/30 bg-brand-cream/50';
+    default: return 'text-gray-400 bg-gray-50';
   }
 };
 
 const Tasks: React.FC = () => {
+  const { user } = useAuth(); // Added useAuth
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<TaskData[]>([]);
   const [projects, setProjects] = useState<ProjectData[]>([]);
@@ -63,13 +65,13 @@ const Tasks: React.FC = () => {
 
   const handleDelete = async (id: string | undefined) => {
     if (!id) return;
-    if (window.confirm('Delete this task?')) {
+    if (window.confirm('Delete this task node from history?')) {
       try {
         await deleteTask(id);
-        showToast('Task deleted successfully', 'success');
+        showToast('Task node purged', 'success');
         fetchData();
       } catch (error) {
-        showToast('Error deleting task', 'error');
+        showToast('Error purging task', 'error');
       }
     }
   };
@@ -96,15 +98,15 @@ const Tasks: React.FC = () => {
     try {
       if (currentTask._id) {
         await updateTask(currentTask._id, currentTask);
-        showToast('Task updated', 'success');
+        showToast('Task parameters updated', 'success');
       } else {
         await createTask(currentTask as TaskData);
-        showToast('Task created', 'success');
+        showToast('New task node initialized', 'success');
       }
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
-      showToast('Error saving task', 'error');
+      showToast('Error saving task node', 'error');
     }
   };
 
@@ -116,42 +118,47 @@ const Tasks: React.FC = () => {
   });
 
   return (
-    <Layout title="Task Management">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <Layout title="Task Operational Center">
+      <div className="space-y-[2.5rem] animate-in fade-in duration-1000">
+        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Project Tasks</h1>
-            <p className="text-sm text-gray-500 mt-1">Assign and track development tasks across projects.</p>
+            <h1 className="text-[2.2rem] font-[900] text-brand-brown tracking-[-0.04em] leading-none">Operational Tasks</h1>
+            <p className="text-brand-brown/40 text-[0.8rem] font-[700] mt-3 uppercase tracking-widest">Development Unit Assignment & Traceability</p>
           </div>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Task
-          </button>
+          {['Admin', 'Project Manager'].includes(user?.role || '') && (
+            <button 
+              onClick={() => handleOpenModal()}
+              className="flex items-center px-[2rem] py-[1rem] bg-brand-brown text-white rounded-full text-[0.8rem] font-black uppercase tracking-widest shadow-xl shadow-brand-brown/20 hover:scale-[1.05] transition-all active:scale-[0.95]"
+            >
+              <Plus className="w-5 h-5 mr-3" />
+              Initialize Task
+            </button>
+          )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:w-96">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        {/* Filters & Search */}
+        <div className="bg-white rounded-[2.5rem] border border-brand-brown/5 p-4 flex flex-col lg:flex-row gap-6 items-center justify-between shadow-sm">
+          <div className="relative w-full lg:w-[25rem] group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-brand-brown/20 group-focus-within:text-brand-brown transition-colors" />
             <input
               type="text"
-              placeholder="Search tasks..."
+              placeholder="Search by task identity..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full pl-14 pr-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/5 rounded-full text-[0.9rem] font-bold text-brand-brown placeholder:text-brand-brown/20 focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
             />
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full lg:w-auto py-1">
             {['All', 'Todo', 'In Progress', 'Testing', 'Completed'].map(status => (
               <button
                 key={status}
                 onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                className={`px-6 py-2.5 rounded-full text-[0.7rem] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                   filterStatus === status 
-                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-brand-brown text-white shadow-lg shadow-brand-brown/20' 
+                    : 'bg-brand-cream/50 text-brand-brown/40 hover:bg-brand-brown/5 border border-brand-brown/5'
                 }`}
               >
                 {status}
@@ -161,49 +168,54 @@ const Tasks: React.FC = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="flex flex-col items-center justify-center py-32 space-y-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-brown"></div>
+            <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest animate-pulse">Syncing Task Telemetry...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-4">
             {filteredTasks.map(task => (
-              <div key={task._id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col md:flex-row md:items-center gap-4">
+              <div key={task._id} className="bg-white rounded-[2rem] border border-brand-brown/5 shadow-sm hover:shadow-[0_8px_32px_rgba(61,43,31,0.06)] transition-all duration-500 p-8 flex flex-col lg:flex-row lg:items-center gap-6 group">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-gray-400 uppercase">{task.taskId}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${getPriorityColor(task.priority)}`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-[0.6rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">ID::{task.taskId}</span>
+                    <span className={`px-4 py-1 rounded-full text-[0.6rem] font-black uppercase tracking-widest ${getPriorityStyles(task.priority)}`}>
                       {task.priority}
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">{task.title}</h3>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <FolderKanban className="w-4 h-4 mr-1 text-gray-400" />
-                      {task.projectId?.name || 'No Project'}
+                  <h3 className="text-[1.2rem] font-[800] text-brand-brown mb-2 tracking-tight group-hover:translate-x-1 transition-transform duration-500">{task.title}</h3>
+                  <div className="flex flex-wrap items-center gap-6 text-[0.75rem] font-[700] text-brand-brown/40">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-brand-cream rounded-lg text-brand-brown/30 group-hover:bg-brand-brown group-hover:text-white transition-colors duration-500">
+                            <FolderKanban className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="uppercase tracking-widest">{task.projectId?.name || 'Unassigned Cluster'}</span>
                     </div>
                     {task.assigneeId && (
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 mr-1 text-gray-400" />
-                        {task.assigneeId.username}
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-brand-cream flex items-center justify-center border border-brand-brown/5">
+                            <User className="w-3 h-3 text-brand-brown/30 font-black" />
+                        </div>
+                        <span className="font-bold">{task.assigneeId.username}</span>
                       </div>
                     )}
                     {task.dueDate && (
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                        {new Date(task.dueDate).toLocaleDateString()}
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-brand-accent/40" />
+                        <span className="font-bold tracking-tight">{new Date(task.dueDate).toLocaleDateString()}</span>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center justify-between md:justify-end gap-3 shrink-0">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(task.status)}`}>
+                <div className="flex items-center justify-between lg:justify-end gap-6 shrink-0">
+                  <span className={`px-6 py-2 rounded-full text-[0.65rem] font-black uppercase tracking-widest border ${getStatusStyles(task.status)} shadow-sm`}>
                     {task.status}
                   </span>
-                  <div className="flex gap-1">
-                    <button onClick={() => handleOpenModal(task)} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                  <div className="flex gap-2">
+                    <button onClick={() => handleOpenModal(task)} className="p-3 bg-brand-cream/50 text-brand-brown/20 hover:bg-brand-brown hover:text-white rounded-xl transition-all duration-300 shadow-sm">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(task._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                    <button onClick={() => handleDelete(task._id)} className="p-3 bg-rose-50 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-300 shadow-sm">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -211,51 +223,56 @@ const Tasks: React.FC = () => {
               </div>
             ))}
             {filteredTasks.length === 0 && (
-              <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300 text-gray-500">
-                No tasks found.
+              <div className="text-center py-32 bg-white rounded-[2.5rem] border border-dashed border-brand-brown/10 text-brand-brown/20 italic font-[800] uppercase tracking-widest text-[0.9rem]">
+                No operational tasks detected in the current sector.
               </div>
             )}
           </div>
         )}
 
+        {/* Task Configuration Modal */}
         {isModalOpen && currentTask && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-900">{currentTask._id ? 'Edit Task' : 'New Task'}</h2>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
-              </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-brand-brown/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+            <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden relative z-10 border border-brand-brown/5 animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
+              <div className="px-10 py-8 border-b border-brand-brown/5 flex justify-between items-center bg-brand-cream/20">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Task Title</label>
+                  <h2 className="text-[1.8rem] font-[900] text-brand-brown tracking-[-0.03em]">{currentTask._id ? 'Update Node' : 'Initialize Task'}</h2>
+                  <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest">Global operational task definition</p>
+                </div>
+                <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full flex items-center justify-center text-brand-brown/20 hover:text-brand-brown hover:bg-brand-cream transition-all font-black">✕</button>
+              </div>
+              <form onSubmit={handleSubmit} className="p-10 space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Task Designation</label>
                   <input
                     type="text"
                     required
                     value={currentTask.title}
                     onChange={e => setCurrentTask({...currentTask, title: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter task title"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
+                    placeholder="Enter task definition..."
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Project</label>
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Parent Infrastructure</label>
                   <select
                     required
                     value={typeof currentTask.projectId === 'string' ? currentTask.projectId : currentTask.projectId?._id}
                     onChange={e => setCurrentTask({...currentTask, projectId: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
                   >
-                    <option value="">Select Project</option>
+                    <option value="">Select Target Cluster</option>
                     {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Status</label>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Deployment Status</label>
                     <select
                       value={currentTask.status}
                       onChange={e => setCurrentTask({...currentTask, status: e.target.value as any})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
                     >
                       <option value="Todo">Todo</option>
                       <option value="In Progress">In Progress</option>
@@ -263,12 +280,12 @@ const Tasks: React.FC = () => {
                       <option value="Completed">Completed</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">Priority</label>
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Priority Tier</label>
                     <select
                       value={currentTask.priority}
                       onChange={e => setCurrentTask({...currentTask, priority: e.target.value as any})}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
                     >
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
@@ -277,28 +294,30 @@ const Tasks: React.FC = () => {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Due Date</label>
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Target Completion Date</label>
                   <input
                     type="date"
                     value={currentTask.dueDate ? new Date(currentTask.dueDate).toISOString().split('T')[0] : ''}
                     onChange={e => setCurrentTask({...currentTask, dueDate: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.95rem] font-black focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Operational Details</label>
                   <textarea
                     rows={3}
                     value={currentTask.description}
                     onChange={e => setCurrentTask({...currentTask, description: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none"
-                    placeholder="Task details..."
+                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none h-24 resize-none transition-all"
+                    placeholder="Provide node specific parameters..."
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-lg transition">Cancel</button>
-                  <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-md transition">Save Task</button>
+                <div className="flex justify-end gap-5 pt-4">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 text-brand-brown/30 text-[0.7rem] font-black uppercase tracking-widest hover:text-brand-brown transition-colors">Abort</button>
+                  <button type="submit" className="px-10 py-4 bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-full shadow-2xl shadow-brand-brown/30 hover:scale-[1.05] active:scale-[0.95] transition-all">
+                    {currentTask._id ? 'Publish Node' : 'Initialize Task'}
+                  </button>
                 </div>
               </form>
             </div>

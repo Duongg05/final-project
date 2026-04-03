@@ -4,7 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
-import Register from './pages/Register';
+// import Register from './pages/Register';
+
 import Dashboard from './pages/Dashboard';
 import HRManagement from './pages/HRManagement';
 import Projects from './pages/Projects';
@@ -22,7 +23,9 @@ const App: React.FC = () => {
         <ToastProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            {/* <Route path="/register" element={<Register />} /> */}
+
             
             <Route path="/dashboard" element={
               <ProtectedRoute>
@@ -49,7 +52,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/source-code" element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['Admin', 'Project Manager', 'Developer']}>
                 <SourceCode />
               </ProtectedRoute>
             } />

@@ -113,6 +113,76 @@ class AuthService {
 
 
 
+  async requestOtp(email) {
+    const user = await User.findOne({ email });
+    if (!user) throw new Error('Email not found');
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Save to Otp model
+    const Otp = require('../models/Otp');
+    // If there's an existing OTP, delete or update it
+    await Otp.deleteMany({ email });
+    const newOtp = new Otp({ email, otp: otpCode });
+    await newOtp.save();
+
+    // Send email
+    const emailService = require('./emailService');
+    await emailService.sendOtpEmail(email, otpCode);
+
+    return { message: 'OTP sent successfully' };
+  }
+
+  async verifyOtp(email, submittedOtp) {
+    const Otp = require('../models/Otp');
+    const otpRecord = await Otp.findOne({ email });
+
+    if (!otpRecord) throw new Error('OTP expired or not found');
+
+    if (otpRecord.attempts >= 5) {
+      await Otp.deleteOne({ _id: otpRecord._id });
+      throw new Error('Too many failed attempts. Please request a new OTP.');
+    }
+
+    if (otpRecord.otp !== submittedOtp) {
+      otpRecord.attempts += 1;
+      await otpRecord.save();
+      throw new Error('Invalid OTP');
+    }
+
+    // OTP Correct
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // Login user
+    const user = await User.findOne({ email });
+
+    // Generate token
+    const jti = uuidv4();
+    const payload = {
+      user: {
+        id: user._id,
+        role: user.role
+      },
+      jti
+    };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+
+    user.sessionTokens.push(jti);
+    await user.save();
+
+    return {
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    };
+  }
+
   async logout(userId, jti) {
     const user = await User.findById(userId);
     if (user) {

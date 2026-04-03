@@ -7,6 +7,17 @@ import {
 import { getAuditLogs } from '../services/securityService';
 import type { AuditLogData } from '../services/securityService';
 
+const getActionStyles = (action: string) => {
+  const upperAction = action.toUpperCase();
+  if (upperAction.includes('DELETE') || upperAction.includes('ALERT') || upperAction.includes('FAIL') || upperAction.includes('UNAUTHORIZED') || upperAction.includes('LOCK')) 
+    return 'text-rose-600 bg-rose-50 border-rose-100';
+  if (upperAction.includes('CREATE') || upperAction.includes('SUCCESS') || upperAction.includes('CHECKIN') || upperAction.includes('LOGIN')) 
+    return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+  if (upperAction.includes('UPDATE') || upperAction.includes('CHECKOUT') || upperAction.includes('EDIT')) 
+    return 'text-amber-600 bg-amber-50 border-amber-100';
+  return 'text-brand-brown/40 bg-brand-cream/50 border-brand-brown/5';
+};
+
 const Security: React.FC = () => {
   const [logs, setLogs] = useState<AuditLogData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,111 +39,147 @@ const Security: React.FC = () => {
     }
   };
 
-  const getActionColor = (action: string) => {
-    const upperAction = action.toUpperCase();
-    if (upperAction.includes('DELETE') || upperAction.includes('ALERT') || upperAction.includes('FAIL') || upperAction.includes('UNAUTHORIZED')) return 'text-red-600 bg-red-50 border-red-200';
-    if (upperAction.includes('CREATE') || upperAction.includes('SUCCESS') || upperAction.includes('CHECKIN')) return 'text-green-600 bg-green-50 border-green-200';
-    if (upperAction.includes('UPDATE') || upperAction.includes('CHECKOUT')) return 'text-blue-600 bg-blue-50 border-blue-200';
-    return 'text-gray-600 bg-gray-50 border-gray-200';
-  };
-
   const filteredLogs = logs.filter(l => 
     l.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.userId?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+    (l.userId?.username && l.userId.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (l.resource && l.resource.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
-    <Layout title="Security & Audit Logs">
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
-              <ShieldAlert className="w-6 h-6" />
+    <Layout title="Security Terminal">
+      <div className="space-y-[2.5rem] animate-in fade-in duration-1000">
+        
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+          <div>
+            <h1 className="text-[2.2rem] font-[900] text-brand-brown tracking-[-0.04em] leading-none">Security Protocol Log</h1>
+            <p className="text-brand-brown/40 text-[0.8rem] font-[700] mt-3 uppercase tracking-widest">Global Audit Trail & Threat Mitigation Registry</p>
+          </div>
+          <div className="flex items-center gap-4 px-6 py-3 bg-emerald-50 rounded-full border border-emerald-100 shadow-sm">
+             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+             <span className="text-[0.65rem] font-black text-emerald-600 uppercase tracking-[0.2em]">System Integrity: Optimal</span>
+          </div>
+        </div>
+
+        {/* Status Dashboard */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-[1.5rem]">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-brand-brown/5 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all duration-700">
+            <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all duration-500 shadow-sm">
+              <ShieldAlert className="w-7 h-7" />
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-400 uppercase">System Status</div>
-              <div className="text-xl font-bold text-gray-900 leading-tight">Secure</div>
+              <div className="text-[0.6rem] font-black text-brand-brown/20 uppercase tracking-[0.2em] mb-1">Defense Array</div>
+              <div className="text-[1.3rem] font-[900] text-brand-brown leading-tight">Active Firewall</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center text-green-600">
-              <Activity className="w-6 h-6" />
+          
+          <div className="bg-white p-8 rounded-[2.5rem] border border-brand-brown/5 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all duration-700">
+            <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500 shadow-sm">
+              <Activity className="w-7 h-7" />
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Recent Events</div>
-              <div className="text-xl font-bold text-gray-900 leading-tight">{logs.length} logged</div>
+              <div className="text-[0.6rem] font-black text-brand-brown/20 uppercase tracking-[0.2em] mb-1">Registry Flow</div>
+              <div className="text-[1.3rem] font-[900] text-brand-brown leading-tight">{logs.length} Vectors</div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-              <Lock className="w-6 h-6" />
+
+          <div className="bg-white p-8 rounded-[2.5rem] border border-brand-brown/5 shadow-sm flex items-center gap-6 group hover:shadow-xl transition-all duration-700">
+            <div className="w-16 h-16 bg-brand-cream rounded-2xl flex items-center justify-center text-brand-brown group-hover:bg-brand-brown group-hover:text-white transition-all duration-500 shadow-sm">
+              <Lock className="w-7 h-7" />
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-400 uppercase">Access Level</div>
-              <div className="text-xl font-bold text-gray-900 leading-tight">Admin Only</div>
+              <div className="text-[0.6rem] font-black text-brand-brown/20 uppercase tracking-[0.2em] mb-1">Authorization</div>
+              <div className="text-[1.3rem] font-[900] text-brand-brown leading-tight">Tier 0 Access</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <Terminal className="w-5 h-5 text-gray-400" />
-              Audit Trait
+        {/* Audit Log Table Container */}
+        <div className="bg-white rounded-[3rem] border border-brand-brown/5 shadow-sm overflow-hidden min-h-[500px]">
+          <div className="p-8 border-b border-brand-brown/5 flex flex-col md:flex-row justify-between items-center gap-6 bg-brand-cream/10">
+            <h3 className="text-[1.1rem] font-[900] text-brand-brown flex items-center gap-4 tracking-[-0.02em]">
+              <div className="p-2 bg-brand-brown text-white rounded-lg shadow-lg">
+                <Terminal className="w-5 h-5" />
+              </div>
+              Traceability Interface
             </h3>
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+            <div className="relative w-full md:w-[20rem] group">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-brown/20 group-focus-within:text-brand-brown transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search logs..." 
+                placeholder="Locate sequence node..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500 transition"
+                className="w-full pl-14 pr-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/5 rounded-full text-[0.85rem] font-bold text-brand-brown placeholder:text-brand-brown/20 focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all shadow-inner"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">User</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Action</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Resource</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Timestamp</th>
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-brand-cream/20">
+                  <th className="px-10 py-6 text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Origin Agent</th>
+                  <th className="px-10 py-6 text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Action Vector</th>
+                  <th className="px-10 py-6 text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Target Resource</th>
+                  <th className="px-10 py-6 text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Protocol Metadata</th>
+                  <th className="px-10 py-6 text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Temporal Stamp</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-brand-brown/5">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 inline-block"></div></td></tr>
+                  <tr><td colSpan={5} className="px-10 py-32 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-brown"></div>
+                        <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest animate-pulse">Decrypting Security Logs...</p>
+                     </div>
+                  </td></tr>
                 ) : filteredLogs.map(log => (
-                  <tr key={log._id} className="hover:bg-gray-50/50 transition">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-                          <User className="w-4 h-4" />
+                  <tr key={log._id} className="hover:bg-brand-cream/10 transition-colors group">
+                    <td className="px-10 py-7">
+                      <div className="flex items-center gap-4">
+                        <div className="w-[2.8rem] h-[2.8rem] rounded-2xl bg-brand-cream flex items-center justify-center text-brand-brown/30 group-hover:bg-brand-brown group-hover:text-white transition-all duration-500 shadow-sm border border-brand-brown/5">
+                          <User className="w-5 h-5" />
                         </div>
-                        <span className="text-sm font-bold text-gray-700">{log.userId?.username || 'System'}</span>
+                        <div>
+                            <div className="text-[0.95rem] font-[800] text-brand-brown tracking-tight">{log.userId?.username || 'System Node'}</div>
+                            <div className="text-[0.55rem] font-black text-brand-brown/20 uppercase tracking-widest">UA::{log.userId?._id?.substring(0,8) || 'KERNEL'}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase border ${getActionColor(log.action)}`}>
+                    <td className="px-10 py-7">
+                      <span className={`px-4 py-1.5 rounded-full text-[0.6rem] font-black uppercase tracking-widest border shadow-sm ${getActionStyles(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 font-medium">{log.resource}</td>
-                    <td className="px-6 py-4 text-sm text-gray-400 truncate max-w-[200px]">{log.details}</td>
-                    <td className="px-6 py-4 text-[11px] font-mono text-gray-400">
-                      {new Date(log.timestamp).toLocaleString()}
+                    <td className="px-10 py-7">
+                        <div className="text-[0.8rem] font-black text-brand-brown uppercase tracking-tight overflow-hidden text-ellipsis whitespace-nowrap max-w-[150px]">
+                            {log.resource}
+                        </div>
+                    </td>
+                    <td className="px-10 py-7">
+                        <div className="text-[0.8rem] font-[600] text-brand-brown/40 italic truncate max-w-[250px] leading-relaxed">
+                            {log.details || 'No additional entropy detected.'}
+                        </div>
+                    </td>
+                    <td className="px-10 py-7 whitespace-nowrap">
+                        <div className="flex flex-col">
+                            <span className="text-[0.8rem] font-black text-brand-brown tracking-tight">{new Date(log.timestamp).toLocaleDateString()}</span>
+                            <span className="text-[0.6rem] font-mono font-black text-brand-brown/20 uppercase tracking-widest">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                        </div>
                     </td>
                   </tr>
                 ))}
                 {!loading && filteredLogs.length === 0 && (
-                  <tr><td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic">No security logs found.</td></tr>
+                  <tr><td colSpan={5} className="px-10 py-32 text-center text-brand-brown/20 italic font-[800] uppercase tracking-widest text-[0.9rem]">No anomalies detected in this sector range.</td></tr>
                 )}
               </tbody>
             </table>
+          </div>
+          
+          {/* Footer Metadata */}
+          <div className="p-8 bg-brand-cream/5 border-t border-brand-brown/5 text-center">
+             <p className="text-[0.6rem] font-black text-brand-brown/30 uppercase tracking-[0.3em]">End of Audit Transmission - Encryption Active</p>
           </div>
         </div>
       </div>

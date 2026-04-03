@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { 
   Plus, Search, Filter, 
-  Edit2, Trash2, Mail, Briefcase, X
+  Edit2, Trash2, Mail, Briefcase, X, Eye, EyeOff
 } from 'lucide-react';
 import Layout from '../components/Layout';
 import { useToast } from '../context/ToastContext';
@@ -35,6 +35,7 @@ const HRManagement: React.FC = () => {
     role: 'Developer',
     status: 'Active'
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchEmployees = async () => {
     try {
@@ -70,6 +71,7 @@ const HRManagement: React.FC = () => {
   const openAddModal = () => {
     setEditingEmployee(null);
     setFormData({ username: '', email: '', password: '', role: 'Developer', status: 'Active' });
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -82,6 +84,7 @@ const HRManagement: React.FC = () => {
       role: emp.role || 'Developer', 
       status: emp.status || 'Active' 
     });
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -97,6 +100,7 @@ const HRManagement: React.FC = () => {
         await api.post('/users', formData);
         showToast('Employee created successfully', 'success');
       }
+      setShowPassword(false);
       setIsModalOpen(false);
       fetchEmployees();
     } catch (error: any) {
@@ -106,92 +110,103 @@ const HRManagement: React.FC = () => {
 
   return (
     <Layout title="Human Resources">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="space-y-[2.5rem] animate-in fade-in duration-1000">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Employees Directory</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage your team members and their account permissions here.</p>
+            <h1 className="text-[2.2rem] font-[900] text-brand-brown tracking-[-0.04em] leading-none">Personnel Directory</h1>
+            <p className="text-brand-brown/40 text-[0.8rem] font-[700] mt-3 uppercase tracking-widest">Global Workforce Registry & Access Control</p>
           </div>
           {['Admin', 'HR Manager'].includes(user?.role || '') && (
             <button 
               onClick={openAddModal}
-              className="flex items-center px-4 py-2.5 bg-indigo-600 text-white rounded-lg font-medium tracking-wide shadow-sm hover:bg-indigo-700 hover:shadow transition-all active:scale-95">
-              <Plus className="w-5 h-5 mr-2" />
-              Add Employee
+              className="flex items-center px-[2rem] py-[1rem] bg-brand-brown text-white rounded-full text-[0.8rem] font-black uppercase tracking-widest shadow-xl shadow-brand-brown/20 hover:scale-[1.05] transition-all active:scale-[0.95]">
+              <Plus className="w-5 h-5 mr-3" />
+              Onboard Personnel
             </button>
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:w-96">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="w-5 h-5 text-gray-400" />
+        {/* Search & Filter Bar */}
+        <div className="bg-white rounded-[2.5rem] border border-brand-brown/5 p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
+          <div className="relative w-full md:w-[25rem] group">
+            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+              <Search className="w-5 h-5 text-brand-brown/20 group-focus-within:text-brand-brown transition-colors" />
             </div>
             <input
               type="text"
-              placeholder="Search employees..."
+              placeholder="Search by identity or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none sm:text-sm"
+              className="block w-full pl-14 pr-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/5 rounded-full text-[0.9rem] font-bold text-brand-brown placeholder:text-brand-brown/20 focus:ring-4 focus:ring-brand-brown/5 focus:border-brand-brown/30 outline-none transition-all"
             />
           </div>
-          <button className="flex items-center px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 text-sm font-medium hover:bg-gray-50">
-            <Filter className="w-4 h-4 mr-2 text-gray-500" />
-            Filters
+          <button className="flex items-center px-8 py-[1rem] bg-brand-cream text-brand-brown text-[0.75rem] font-black uppercase tracking-widest rounded-full hover:bg-white border border-brand-brown/5 transition-all">
+            <Filter className="w-4 h-4 mr-3 text-brand-brown/40" />
+            Segment Filters
           </button>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Employee</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Contact</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Role</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
+        {/* Employees Table */}
+        <div className="bg-white rounded-[3rem] border border-brand-brown/5 shadow-sm overflow-hidden min-h-[400px]">
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="min-w-full border-collapse">
+              <thead>
+                <tr className="bg-brand-cream/30">
+                  <th className="px-10 py-6 text-left text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Identity Node</th>
+                  <th className="px-10 py-6 text-left text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Communications</th>
+                  <th className="px-10 py-6 text-left text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Privilege Level</th>
+                  <th className="px-10 py-6 text-left text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Node Status</th>
+                  <th className="px-10 py-6 text-right text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-[0.2em]">Operations</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-brand-brown/5">
                 {loading ? (
-                   <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div></td></tr>
+                   <tr><td colSpan={5} className="px-10 py-32 text-center">
+                     <div className="flex flex-col items-center gap-4">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-brown"></div>
+                        <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest animate-pulse">Syncing Personnel Data...</p>
+                     </div>
+                   </td></tr>
                 ) : employees.length === 0 ? (
-                   <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500 font-medium">No employees found.</td></tr>
+                   <tr><td colSpan={5} className="px-10 py-32 text-center text-brand-brown/20 italic font-[800] uppercase tracking-widest text-[0.9rem]">No organic units found in this sector.</td></tr>
                 ) : employees.map((person) => (
-                  <tr key={person._id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={person._id} className="hover:bg-brand-cream/10 transition-colors group">
+                    <td className="px-10 py-7 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700">
+                        <div className="flex-shrink-0 h-[3.2rem] w-[3.2rem] rounded-2xl bg-brand-cream flex items-center justify-center font-black text-[0.8rem] text-brand-brown shadow-sm border border-brand-brown/5 group-hover:bg-brand-brown group-hover:text-white transition-all duration-500">
                           {(person.username || 'A').substring(0,2).toUpperCase()}
                         </div>
-                        <div className="ml-4 text-sm font-semibold text-gray-900">{person.username}</div>
+                        <div className="ml-5">
+                            <div className="text-[1rem] font-[800] text-brand-brown tracking-tight">{person.username}</div>
+                            <div className="text-[0.6rem] font-[800] text-brand-brown/30 uppercase tracking-widest">ID::{person._id.substring(0,8)}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                    <td className="px-10 py-7 whitespace-nowrap">
+                      <div className="flex items-center text-[0.85rem] font-[700] text-brand-brown/60">
+                        <Mail className="w-4 h-4 mr-3 text-brand-brown/20" />
                         {person.email}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900 font-medium">
-                        <Briefcase className="w-4 h-4 mr-2 text-gray-400" />
+                    <td className="px-10 py-7 whitespace-nowrap">
+                      <div className="flex items-center text-[0.85rem] font-[800] text-brand-brown uppercase tracking-tight">
+                        <Briefcase className="w-4 h-4 mr-3 text-brand-brown/20" />
                         {person.role}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${person.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                    <td className="px-10 py-7 whitespace-nowrap">
+                      <span className={`px-4 py-1.5 text-[0.6rem] font-black uppercase tracking-widest rounded-full border ${person.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-brand-cream text-brand-brown/40 border-brand-brown/5'}`}>
                         {person.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                    <td className="px-10 py-7 whitespace-nowrap text-right">
                       {['Admin', 'HR Manager'].includes(user?.role || '') && (
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => openEditModal(person)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                        <div className="flex justify-end gap-3">
+                          <button onClick={() => openEditModal(person)} className="p-[0.7rem] bg-brand-cream/50 text-brand-brown/40 hover:bg-brand-brown hover:text-white rounded-xl transition-all duration-300 shadow-sm">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete(person._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                          <button onClick={() => handleDelete(person._id)} className="p-[0.7rem] bg-rose-50 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-300 shadow-sm">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -206,43 +221,71 @@ const HRManagement: React.FC = () => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-900">{editingEmployee ? 'Edit Employee' : 'Add Employee'}</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-500"><X className="w-6 h-6" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-brand-brown/40 backdrop-blur-md" onClick={() => setIsModalOpen(false)}></div>
+          <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden relative z-10 border border-brand-brown/5 animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
+            <div className="px-10 py-8 border-b border-brand-brown/5 flex justify-between items-center bg-brand-cream/20">
+              <div>
+                <h3 className="text-[1.8rem] font-[900] text-brand-brown tracking-[-0.03em]">{editingEmployee ? 'Modification Terminal' : 'Onboarding Terminal'}</h3>
+                <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest">Organic unit definition protocol</p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full flex items-center justify-center text-brand-brown/20 hover:text-brand-brown hover:bg-brand-cream transition-all"><X className="w-6 h-6" /></button>
             </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <input type="text" required value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
+            <form onSubmit={handleSave} className="p-10 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Organic Identity</label>
+                    <input type="text" required placeholder="User identifier" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 focus:border-brand-brown/30 outline-none transition-all" />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Port Address</label>
+                    <input type="email" required placeholder="name@iheal.corp" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 focus:border-brand-brown/30 outline-none transition-all" />
+                  </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
+
+              <div className="space-y-3">
+                <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">{editingEmployee ? 'Secure Hash (Null to retain)' : 'Secure Hash'}</label>
+                <div className="relative group">
+                    <input 
+                        type={showPassword ? 'text' : 'password'} 
+                        required={!editingEmployee} 
+                        placeholder="••••••••" 
+                        autoComplete="new-password"
+                        value={formData.password} 
+                        onChange={e => setFormData({...formData, password: e.target.value})} 
+                        className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 focus:border-brand-brown/30 outline-none transition-all" 
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-brand-brown/20 hover:text-brand-brown transition-colors focus:outline-none"
+                    >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{editingEmployee ? 'Password (empty to keep)' : 'Password'}</label>
-                <input type="password" required={!editingEmployee} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
+
+              <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Access Tier</label>
+                  <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer">
                     {['Admin', 'HR Manager', 'Project Manager', 'Developer', 'Tester', 'Viewer'].map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500">
+                <div className="space-y-3">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Lifecycle Status</label>
+                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2 text-gray-600 font-semibold hover:bg-gray-100 rounded-xl transition">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 shadow-md transition">{editingEmployee ? 'Save' : 'Create'}</button>
+
+              <div className="flex justify-end gap-5 pt-8">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-8 py-3 text-brand-brown/30 text-[0.7rem] font-black uppercase tracking-widest hover:text-brand-brown transition-colors">Abort Protocol</button>
+                <button type="submit" className="px-10 py-4 bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-full shadow-2xl shadow-brand-brown/30 hover:scale-[1.05] active:scale-[0.95] transition-all">
+                    {editingEmployee ? 'Confirm Modification' : 'Execute Onboarding'}
+                </button>
               </div>
             </form>
           </div>

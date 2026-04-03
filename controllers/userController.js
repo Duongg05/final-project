@@ -70,7 +70,7 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, departmentId, status, password, currentPassword } = req.body;
+    const { username, email, role, departmentId, status, password, currentPassword, firstName, lastName } = req.body;
     
     console.log('UpdateUser debug:', { reqUserId: req.user.id, paramId: id, reqUserType: typeof req.user.id, paramType: typeof id });
 
@@ -83,6 +83,8 @@ exports.updateUser = async (req, res) => {
     if (email) user.email = email;
     if (role) user.role = role;
     if (departmentId !== undefined) user.departmentId = departmentId;
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
     if (status) user.status = status;
 
     if (password) {
