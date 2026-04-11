@@ -28,7 +28,8 @@ const documentSpikeLimiter = rateLimit({
 
 router.use(authMiddleware);
 
-router.post('/', roleMiddleware(['Admin', 'Project Manager', 'Developer']), upload.single('document'), documentController.createDocument);
+router.post('/', roleMiddleware(['Admin', 'Project Manager']), upload.single('document'), documentController.createDocument);
+router.put('/:id', roleMiddleware(['Admin', 'Project Manager']), upload.single('document'), documentController.updateDocument);
 router.get('/', documentSpikeLimiter, documentController.getDocuments);
 router.delete('/:id', roleMiddleware(['Admin', 'Project Manager']), documentController.deleteDocument);
 

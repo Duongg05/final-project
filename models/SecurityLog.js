@@ -9,7 +9,7 @@ const securityLogSchema = new mongoose.Schema({
   action: { 
     type: String, 
     required: true,
-    enum: ['LOGIN_SUCCESS', 'LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'CHECKIN', 'CHECKOUT', 'ABNORMAL_CHECKIN', 'DATA_ACCESS_SPIKE', 'ERROR']
+    enum: ['LOGIN_SUCCESS', 'LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'CHECKIN', 'CHECKOUT', 'ABNORMAL_CHECKIN', 'DOUBLE_CHECKIN', 'DATA_ACCESS_SPIKE', 'AFTER_HOURS_ACCESS', 'ERROR']
   },
   ip: { 
     type: String 

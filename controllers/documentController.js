@@ -28,6 +28,35 @@ exports.createDocument = async (req, res) => {
   }
 };
 
+exports.updateDocument = async (req, res) => {
+  try {
+    const documentData = req.body;
+    if (req.file) {
+      documentData.fileUrl = req.file.path.replace(/\\/g, '/');
+      documentData.name = req.file.originalname; 
+    }
+    
+    // Explicitly fallback if uploadedBy is passed but empty
+    if (!documentData.uploadedBy && req.user) {
+        documentData.uploadedBy = req.user.id;
+    }
+
+    const doc = await Document.findByIdAndUpdate(req.params.id, documentData, { new: true });
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+    
+    await security.createLog({
+      userId: req.user?.id,
+      action: 'UPDATE_DOC',
+      resource: 'Document',
+      details: `Updated document: ${doc.name}`,
+      timestamp: new Date()
+    });
+    res.json(doc);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 exports.getDocuments = async (req, res) => {
   try {
     let query = {};

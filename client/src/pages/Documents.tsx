@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { 
-  FilePlus, FileText, Trash2, 
-  ExternalLink, User
+  FilePlus, FileText, Trash2, User
 } from 'lucide-react';
-import { getDocuments, createDocument, deleteDocument } from '../services/documentService';
+import { getDocuments, createDocument, updateDocument, deleteDocument } from '../services/documentService';
 import type { DocumentData } from '../services/documentService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
@@ -25,6 +24,26 @@ const Documents: React.FC = () => {
     projectId: '',
     description: ''
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+
+  const getFileUrl = (doc: DocumentData) => {
+    const url = doc.fileUrl;
+    if (!url) return '#';
+    const fullUrl = url.startsWith('http') ? url : `${window.location.origin}/${url.replace(/^\//, '')}`;
+    const lowerUrl = fullUrl.toLowerCase();
+    const docType = doc.type?.toLowerCase() || '';
+    
+    const isWord = lowerUrl.endsWith('.doc') || lowerUrl.endsWith('.docx') || docType === 'docx';
+    const isExcel = lowerUrl.endsWith('.xls') || lowerUrl.endsWith('.xlsx') || docType === 'excel';
+    const isPowerPoint = lowerUrl.endsWith('.ppt') || lowerUrl.endsWith('.pptx') || docType === 'powerpoint';
+    
+    if (isWord) return `ms-word:ofv|u|${fullUrl}`;
+    if (isExcel) return `ms-excel:ofv|u|${fullUrl}`;
+    if (isPowerPoint) return `ms-powerpoint:ofv|u|${fullUrl}`;
+    
+    return url.startsWith('http') || url.startsWith('/') ? url : `/${url}`;
+  };
 
   useEffect(() => {
     fetchData();
@@ -49,18 +68,61 @@ const Documents: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const docToCreate = {
-        ...newDoc,
-        docId: `DOC-${Math.floor(1000 + Math.random() * 9000)}`
-      };
-      await createDocument(docToCreate as DocumentData);
-      showToast('Document node archived', 'success');
+      const currentDocId = editingDocId ? (docs.find(d => d._id === editingDocId)?.docId || `DOC-${Math.floor(1000 + Math.random() * 9000)}`) : `DOC-${Math.floor(1000 + Math.random() * 9000)}`;
+      
+      let submitData: DocumentData | FormData;
+
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('document', selectedFile, selectedFile.name);
+        formData.append('name', newDoc.name || '');
+        formData.append('type', newDoc.type || 'PDF');
+        formData.append('docId', currentDocId);
+        formData.append('description', newDoc.description || '');
+        if (newDoc.projectId) {
+            formData.append('projectId', typeof newDoc.projectId === 'string' ? newDoc.projectId : (newDoc.projectId as any)._id);
+        }
+        submitData = formData as any;
+      } else {
+        const docToCreate: any = {
+           ...newDoc,
+           docId: currentDocId
+        };
+        if (!docToCreate.projectId) delete docToCreate.projectId;
+        else if (typeof docToCreate.projectId === 'object') docToCreate.projectId = docToCreate.projectId._id;
+        
+        submitData = docToCreate as DocumentData;
+      }
+
+      if (editingDocId) {
+        await updateDocument(editingDocId, submitData);
+        showToast('Document node updated', 'success');
+      } else {
+        await createDocument(submitData);
+        showToast('Document node archived', 'success');
+      }
+      
       setIsModalOpen(false);
+      setEditingDocId(null);
       setNewDoc({ name: '', type: 'PDF', fileUrl: '', projectId: '', description: '' });
+      setSelectedFile(null);
       fetchData();
     } catch (error) {
       showToast('Error archiving node', 'error');
     }
+  };
+
+  const handleEdit = (doc: DocumentData) => {
+    setEditingDocId(doc._id || null);
+    setNewDoc({
+      name: doc.name,
+      type: doc.type,
+      fileUrl: doc.fileUrl,
+      projectId: doc.projectId ? (typeof doc.projectId === 'string' ? doc.projectId : doc.projectId._id) : '',
+      description: doc.description || ''
+    });
+    setSelectedFile(null);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string | undefined) => {
@@ -86,9 +148,14 @@ const Documents: React.FC = () => {
             <h1 className="text-[2.2rem] font-[900] text-brand-brown tracking-[-0.04em] leading-none">Engineering Repository</h1>
             <p className="text-brand-brown/40 text-[0.8rem] font-[700] mt-3 uppercase tracking-widest">Global Resource Architecture & Documentation</p>
           </div>
-          {['Admin', 'Project Manager', 'HR Manager'].includes(user?.role || '') && (
+          {['Admin', 'Project Manager'].includes(user?.role || '') && (
             <button 
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  setEditingDocId(null);
+                  setNewDoc({ name: '', type: 'PDF', fileUrl: '', projectId: '', description: '' });
+                  setSelectedFile(null);
+                  setIsModalOpen(true);
+                }}
                 className="flex items-center px-[2rem] py-[1rem] bg-brand-brown text-white rounded-full text-[0.8rem] font-black uppercase tracking-widest shadow-xl shadow-brand-brown/20 hover:scale-[1.05] transition-all active:scale-[0.95]"
             >
                 <FilePlus className="w-5 h-5 mr-3" />
@@ -118,16 +185,16 @@ const Documents: React.FC = () => {
                 <tbody className="divide-y divide-brand-brown/5">
                   {docs.map(doc => (
                     <tr key={doc._id} className="hover:bg-brand-cream/10 transition-colors group">
-                      <td className="px-10 py-7">
-                        <div className="flex items-center">
-                          <div className="w-[3rem] h-[3rem] bg-brand-cream rounded-2xl flex items-center justify-center text-brand-brown/40 group-hover:bg-brand-brown group-hover:text-white transition-all duration-500 shadow-sm border border-brand-brown/5">
+                      <td className="px-10 py-7 max-w-xs sm:max-w-sm md:max-w-md w-[35%]">
+                        <a href={getFileUrl(doc)} target="_blank" rel="noreferrer" className="flex items-center group/link w-full">
+                          <div className="flex-shrink-0 w-[3rem] h-[3rem] bg-brand-cream rounded-2xl flex items-center justify-center text-brand-brown/40 group-hover/link:bg-brand-brown group-hover/link:text-white transition-all duration-500 shadow-sm border border-brand-brown/5">
                             <FileText className="w-5 h-5" />
                           </div>
-                          <div className="ml-5">
-                            <div className="text-[1rem] font-[800] text-brand-brown tracking-tight">{doc.name}</div>
+                          <div className="ml-5 overflow-hidden flex-1 min-w-0">
+                            <div className="text-[1rem] font-[800] text-brand-brown tracking-tight group-hover/link:underline truncate w-full" title={doc.name}>{doc.name}</div>
                             <div className="text-[0.6rem] font-black text-brand-brown/20 uppercase tracking-widest">{doc.docId}</div>
                           </div>
-                        </div>
+                        </a>
                       </td>
                       <td className="px-10 py-7">
                         <div className="text-[0.8rem] font-black text-brand-brown/60 uppercase tracking-widest">
@@ -149,11 +216,13 @@ const Documents: React.FC = () => {
                       </td>
                       <td className="px-10 py-7 text-right">
                         <div className="flex justify-end gap-3">
-                          <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-[0.7rem] bg-brand-cream/50 text-brand-brown/40 hover:bg-brand-brown hover:text-white rounded-xl transition-all duration-300 shadow-sm">
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
                           {['Admin', 'Project Manager'].includes(user?.role || '') && (
-                            <button onClick={() => handleDelete(doc._id)} className="p-[0.7rem] bg-rose-50 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-300 shadow-sm">
+                            <button onClick={() => handleEdit(doc)} className="p-[0.7rem] bg-brand-cream/50 text-brand-brown/40 hover:bg-brand-brown hover:text-white rounded-xl transition-all duration-300 shadow-sm" title="Edit Document">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                          )}
+                          {['Admin', 'Project Manager'].includes(user?.role || '') && (
+                            <button onClick={() => handleDelete(doc._id)} className="p-[0.7rem] bg-rose-50 text-rose-300 hover:bg-rose-500 hover:text-white rounded-xl transition-all duration-300 shadow-sm" title="Delete Document">
                                 <Trash2 className="w-4 h-4" />
                             </button>
                           )}
@@ -185,8 +254,8 @@ const Documents: React.FC = () => {
             <div className="bg-white rounded-[3rem] w-full max-w-xl shadow-2xl overflow-hidden relative z-10 border border-brand-brown/5 animate-in zoom-in-95 duration-500 slide-in-from-bottom-8">
               <div className="px-10 py-8 border-b border-brand-brown/5 flex justify-between items-center bg-brand-cream/20">
                 <div>
-                    <h2 className="text-[1.8rem] font-[900] text-brand-brown tracking-[-0.03em]">Archive Terminal</h2>
-                    <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest">Global knowledge asset preservation protocol</p>
+                    <h2 className="text-[1.8rem] font-[900] text-brand-brown tracking-[-0.03em]">{editingDocId ? 'Update Terminal' : 'Archive Terminal'}</h2>
+                    <p className="text-[0.65rem] font-black text-brand-brown/30 uppercase tracking-widest">{editingDocId ? 'Modify existing asset attributes' : 'Global knowledge asset preservation protocol'}</p>
                 </div>
                 <button onClick={() => setIsModalOpen(false)} className="w-12 h-12 rounded-full flex items-center justify-center text-brand-brown/20 hover:text-brand-brown hover:bg-brand-cream transition-all font-black">✕</button>
               </div>
@@ -203,15 +272,41 @@ const Documents: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Digital Vector (URL)</label>
-                  <input
-                    type="text"
-                    required
-                    value={newDoc.fileUrl}
-                    onChange={e => setNewDoc({...newDoc, fileUrl: e.target.value})}
-                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all"
-                    placeholder="https://assets.corp.iheal.com/v/XXXXX"
-                  />
+                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Digital Vector (Local / URL)</label>
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      required={!selectedFile}
+                      disabled={!!selectedFile}
+                      value={selectedFile ? selectedFile.name : newDoc.fileUrl}
+                      onChange={e => setNewDoc({...newDoc, fileUrl: e.target.value})}
+                      className="flex-1 px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-bold focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder="https://assets.corp.iheal.com/v/XXXXX"
+                    />
+                    <label className="flex items-center justify-center px-6 py-[1rem] bg-brand-brown/5 text-brand-brown hover:bg-brand-brown/10 border border-brand-brown/10 rounded-2xl cursor-pointer transition-all">
+                      <span className="text-[0.7rem] font-black uppercase tracking-widest">+ UPLOAD FILE</span>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        onChange={e => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            setSelectedFile(e.target.files[0]);
+                            setNewDoc({...newDoc, fileUrl: ''}); // Clear URL if file selected
+                          }
+                        }} 
+                      />
+                    </label>
+                    {selectedFile && (
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        className="px-4 text-rose-400 hover:text-rose-600 font-black transition-colors"
+                        title="Remove file"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">

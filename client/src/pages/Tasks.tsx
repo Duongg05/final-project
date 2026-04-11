@@ -7,6 +7,8 @@ import { getTasks, createTask, updateTask, deleteTask } from '../services/taskSe
 import type { TaskData } from '../services/taskService';
 import { getProjects } from '../services/projectService';
 import type { ProjectData } from '../services/projectService';
+import { getUsers } from '../services/userService';
+import type { UserData } from '../services/userService';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -35,6 +37,7 @@ const Tasks: React.FC = () => {
   const { showToast } = useToast();
   const [tasks, setTasks] = useState<TaskData[]>([]);
   const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [usersList, setUsersList] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -50,12 +53,14 @@ const Tasks: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [tasksData, projectsData] = await Promise.all([
+      const [tasksData, projectsData, usersData] = await Promise.all([
         getTasks(),
-        getProjects()
+        getProjects(),
+        getUsers()
       ]);
       setTasks(tasksData);
       setProjects(projectsData);
+      setUsersList(usersData);
     } catch (error) {
       console.error('Failed to fetch tasks', error);
     } finally {
@@ -86,7 +91,8 @@ const Tasks: React.FC = () => {
         description: '',
         status: 'Todo',
         priority: 'Medium',
-        projectId: projects.length > 0 ? projects[0]._id : ''
+        projectId: projects.length > 0 ? projects[0]._id : '',
+        assigneeId: ''
       });
     }
     setIsModalOpen(true);
@@ -254,17 +260,30 @@ const Tasks: React.FC = () => {
                     placeholder="Enter task definition..."
                   />
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Parent Infrastructure</label>
-                  <select
-                    required
-                    value={typeof currentTask.projectId === 'string' ? currentTask.projectId : currentTask.projectId?._id}
-                    onChange={e => setCurrentTask({...currentTask, projectId: e.target.value})}
-                    className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">Select Target Cluster</option>
-                    {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Parent Infrastructure</label>
+                    <select
+                      required
+                      value={typeof currentTask.projectId === 'string' ? currentTask.projectId : currentTask.projectId?._id}
+                      onChange={e => setCurrentTask({...currentTask, projectId: e.target.value})}
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="">Select Target Cluster</option>
+                      {projects.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Primary Operative</label>
+                    <select
+                      value={typeof currentTask.assigneeId === 'string' ? currentTask.assigneeId : (currentTask.assigneeId as any)?._id || ''}
+                      onChange={e => setCurrentTask({...currentTask, assigneeId: e.target.value})}
+                      className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
+                    >
+                      <option value="">Unassigned</option>
+                      {usersList.map((u: UserData) => <option key={u._id} value={u._id}>{u.username} ({u.role})</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">

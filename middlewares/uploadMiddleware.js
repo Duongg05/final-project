@@ -23,7 +23,23 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    let ext = path.extname(file.originalname);
+    if (!ext) {
+      const mimeMap = {
+        'application/pdf': '.pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+        'application/msword': '.doc',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+        'application/vnd.ms-excel': '.xls',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+        'application/vnd.ms-powerpoint': '.ppt',
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif'
+      };
+      ext = mimeMap[file.mimetype] || '';
+    }
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
   }
 });
 

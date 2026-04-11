@@ -104,6 +104,9 @@ app.use('/api/source-code', sourceCodeRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
+// Explicitly serve uploads directory so user can open files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Serve Static Frontend (when built)
 const buildPath = path.join(__dirname, 'client', 'dist');
 app.use(express.static(buildPath));
