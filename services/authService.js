@@ -84,29 +84,42 @@ class AuthService {
       await user.save();
     }
 
-    // Generate token
-    const jti = uuidv4();
-    const payload = {
-      user: {
-        id: user._id,
-        role: user.role
-      },
-      jti
-    };
+    if (user.role === 'Admin') {
+      // Generate token immediately for Admin role
+      const jti = uuidv4();
+      const payload = {
+        user: {
+          id: user._id,
+          role: user.role
+        },
+        jti
+      };
+  
+      const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+  
+      // Save session
+      user.sessionTokens.push(jti);
+      await user.save();
+  
+      return {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role
+        }
+      };
+    }
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
-
-    // Save session
-    user.sessionTokens.push(jti);
-    await user.save();
+    // Force 2FA OTP verification step for Non-Admins
+    await this.requestOtp(user.email);
 
     return {
-      token,
+      requiresOtp: true,
       user: {
-        id: user._id,
-        username: user.username,
         email: user.email,
-        role: user.role
+        username: user.username
       }
     };
   }

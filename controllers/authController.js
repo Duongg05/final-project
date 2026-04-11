@@ -14,6 +14,11 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
     const result = await authService.login(username, password);
+
+    // 2FA Flow Redirection
+    if (result.requiresOtp) {
+      return res.status(200).json({ requiresOtp: true, user: result.user, message: 'Identity verified. One-time security code dispatched to your email.' });
+    }
     
     // Log success
     await securityService.logSecurityEvent({

@@ -38,8 +38,16 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { username, password });
-      login(response.data.user);
-      navigate('/dashboard');
+      
+      if (response.data.requiresOtp) {
+        setSuccessMsg(response.data.message);
+        setEmail(response.data.user.email);
+        setMode('otp');
+        setOtpStep(2);
+      } else {
+        login(response.data.user);
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
     } finally {
