@@ -87,6 +87,10 @@ exports.updateUser = async (req, res) => {
     if (lastName) user.lastName = lastName;
     if (status) user.status = status;
 
+    if (req.file) {
+      user.avatar = req.file.path.replace(/\\/g, '/');
+    }
+
     if (password) {
       if (req.user.id && req.user.id.toString() === id.toString()) {
         if (!currentPassword) {

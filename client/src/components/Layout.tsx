@@ -98,8 +98,12 @@ const Layout: React.FC<LayoutProps> = ({ children, title }) => {
           
           <div className="flex items-center gap-[2.5rem]">
             <div className="flex items-center gap-[1.2rem] bg-white px-[1rem] py-[0.6rem] rounded-full border border-slate-100 shadow-sm">
-                <div className="w-[2.2rem] h-[2.2rem] rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-[0.85rem] shadow-md shadow-indigo-200">
-                  {(user?.username || 'U').charAt(0).toUpperCase()}
+                <div className="w-[2.2rem] h-[2.2rem] rounded-full bg-indigo-600 overflow-hidden flex items-center justify-center font-bold text-white text-[0.85rem] shadow-md shadow-indigo-200">
+                  {user?.avatar ? (
+                    <img src={`http://localhost:5000/${user?.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    (user?.username || 'U').charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="hidden sm:block">
                   <div className="text-[0.9rem] font-[850] text-slate-800 tracking-tight leading-none">{user?.username}</div>

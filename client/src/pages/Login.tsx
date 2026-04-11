@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { Lock, User, Mail, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Lock, User, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 
 type AuthMode = 'password' | 'otp';
-type OtpStep = 1 | 2;
 
 const Login: React.FC = () => {
   // --- Password login state ---
@@ -15,12 +14,11 @@ const Login: React.FC = () => {
   // --- OTP login state ---
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [otpStep, setOtpStep] = useState<OtpStep>(1);
-  const [successMsg, setSuccessMsg] = useState('');
 
   // --- Shared state ---
   const [mode, setMode] = useState<AuthMode>('password');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
@@ -31,41 +29,24 @@ const Login: React.FC = () => {
     setSuccessMsg('');
   };
 
-  // ── Password Login Flow ─────────────────────────────────────
+  // ── Password Login Flow (Step 1 of 2FA) ─────────────────────────────────────
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     clearAll();
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { username, password });
-      
+
       if (response.data.requiresOtp) {
         setSuccessMsg(response.data.message);
         setEmail(response.data.user.email);
         setMode('otp');
-        setOtpStep(2);
       } else {
         login(response.data.user);
         navigate('/dashboard');
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ── OTP Step 1: Request Security Code ───────────────────────
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    clearAll();
-    setLoading(true);
-    try {
-      const response = await api.post('/auth/request-otp', { email });
-      setSuccessMsg(response.data.message || 'Security code has been dispatched.');
-      setOtpStep(2);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to dispatch code. Please verify your email.');
     } finally {
       setLoading(false);
     }
@@ -85,14 +66,6 @@ const Login: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const switchMode = (m: AuthMode) => {
-    setMode(m);
-    clearAll();
-    setOtpStep(1);
-    setOtp('');
-    setEmail('');
   };
 
   return (
@@ -120,32 +93,6 @@ const Login: React.FC = () => {
 
         {/* Minimalist White Card */}
         <div className="bg-white rounded-[2.5rem] border border-brand-brown/5 shadow-[0_32px_64px_-12px_rgba(61,43,31,0.12)] p-10 transition-all duration-500">
-          
-          {/* Professional Tab Switcher */}
-          <div className="flex bg-brand-cream p-1.5 rounded-2xl border border-brand-brown/5 mb-10">
-            <button
-              type="button"
-              onClick={() => switchMode('password')}
-              className={`flex-1 py-3 text-[0.7rem] font-[900] uppercase tracking-widest transition-all rounded-xl ${
-                mode === 'password'
-                  ? 'bg-brand-brown text-white shadow-xl shadow-brand-brown/20'
-                  : 'text-brand-brown/40 hover:text-brand-brown'
-              }`}
-            >
-              Access Key
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('otp')}
-              className={`flex-1 py-3 text-[0.7rem] font-[900] uppercase tracking-widest transition-all rounded-xl ${
-                mode === 'otp'
-                  ? 'bg-brand-brown text-white shadow-xl shadow-brand-brown/20'
-                  : 'text-brand-brown/40 hover:text-brand-brown'
-              }`}
-            >
-              One-Time Auth
-            </button>
-          </div>
 
           {/* Feedback Messages */}
           {error && (
@@ -161,7 +108,7 @@ const Login: React.FC = () => {
             </div>
           )}
 
-          {/* ── Credential Authentication Flow ── */}
+          {/* ── Step 1: Credential Authentication ── */}
           {mode === 'password' && (
             <form className="space-y-8" onSubmit={handlePasswordLogin}>
               <div className="space-y-3">
@@ -204,80 +151,47 @@ const Login: React.FC = () => {
             </form>
           )}
 
-          {/* ── Verified Security Code Flow ── */}
+          {/* ── Step 2: OTP Verification (auto-triggered after password) ── */}
           {mode === 'otp' && (
             <div className="animate-in fade-in zoom-in-95 duration-300">
-              {/* Progress Tracker */}
-              <div className="flex items-center justify-center gap-6 mb-10">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[0.7rem] font-black border-2 transition-all ${otpStep === 1 ? 'border-brand-brown bg-brand-brown text-white shadow-lg shadow-brand-brown/20' : 'border-brand-brown text-brand-brown'}`}>1</div>
-                <div className={`h-1 w-10 rounded-full transition-all ${otpStep === 2 ? 'bg-brand-brown' : 'bg-brand-cream'}`}></div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[0.7rem] font-black border-2 transition-all ${otpStep === 2 ? 'border-brand-brown bg-brand-brown text-white shadow-lg shadow-brand-brown/20' : 'border-brand-cream text-brand-brown/20'}`}>2</div>
-              </div>
+              <form className="space-y-8" onSubmit={handleVerifyOtp}>
+                <div className="p-5 bg-brand-cream rounded-2xl text-center mb-8 border border-brand-brown/5">
+                  <p className="text-[0.65rem] font-black text-brand-brown/30 mb-1 uppercase tracking-widest">Security Code Sent To</p>
+                  <p className="text-[0.8rem] font-[800] text-brand-brown/60 tracking-tight">{email}</p>
+                </div>
+                
+                <div className="space-y-4 text-center">
+                  <label className="text-[0.65rem] font-black uppercase tracking-[1em] text-brand-brown/20 ml-2">Verification Code</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    className="w-full bg-brand-cream border-2 border-brand-brown/5 rounded-[1.5rem] py-5 text-center tracking-[0.8em] font-[900] text-[2rem] text-brand-brown focus:outline-none focus:border-brand-brown transition-all shadow-inner"
+                    placeholder="••••••"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                </div>
 
-              {otpStep === 1 ? (
-                <form className="space-y-8" onSubmit={handleRequestOtp}>
-                  <div className="space-y-3">
-                    <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Communications Port</label>
-                    <div className="relative group">
-                      <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-brown/20 group-focus-within:text-brand-brown transition-colors" />
-                      <input
-                        type="email"
-                        required
-                        className="w-full bg-brand-cream/50 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-[1.1rem] text-brand-brown text-[0.9rem] font-bold focus:outline-none focus:ring-4 focus:ring-brand-brown/5 focus:border-brand-brown/50 transition-all placeholder:text-brand-brown/20"
-                        placeholder="identity@iheal.corp"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-3 pt-6">
                   <button
                     type="submit"
-                    disabled={loading}
-                    className="w-full py-[1.1rem] bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-2xl transition-all shadow-2xl shadow-brand-brown/30 active:scale-[0.98]"
+                    disabled={loading || otp.length !== 6}
+                    className="w-full py-[1.1rem] bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-brand-brown/30 active:scale-[0.98]"
                   >
-                    {loading ? 'Packet Transmitting...' : 'Dispatch Token'}
+                    {loading ? 'Verifying...' : 'Execute Verification'}
                   </button>
-                </form>
-              ) : (
-                <form className="space-y-8" onSubmit={handleVerifyOtp}>
-                  <div className="p-5 bg-brand-cream rounded-2xl text-center mb-8 border border-brand-brown/5">
-                    <p className="text-[0.65rem] font-black text-brand-brown/30 mb-1 uppercase tracking-widest">Protocol Address</p>
-                    <p className="text-[0.8rem] font-[800] text-brand-brown/60 tracking-tight">{email}</p>
-                  </div>
-                  
-                  <div className="space-y-4 text-center">
-                    <label className="text-[0.65rem] font-black uppercase tracking-[1em] text-brand-brown/20 ml-2">Verification</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={6}
-                      inputMode="numeric"
-                      pattern="\d{6}"
-                      className="w-full bg-brand-cream border-2 border-brand-brown/5 rounded-[1.5rem] py-5 text-center tracking-[0.8em] font-[900] text-[2rem] text-brand-brown focus:outline-none focus:border-brand-brown transition-all shadow-inner"
-                      placeholder="••••••"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    />
-                  </div>
-
-                  <div className="space-y-3 pt-6">
-                    <button
-                      type="submit"
-                      disabled={loading || otp.length !== 6}
-                      className="w-full py-[1.1rem] bg-brand-brown text-white text-[0.8rem] font-black uppercase tracking-widest rounded-2xl shadow-2xl shadow-brand-brown/30 active:scale-[0.98]"
-                    >
-                      {loading ? 'Verifying Node Link...' : 'Execute Verification'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setOtpStep(1); setOtp(''); clearAll(); }}
-                      className="w-full py-2 text-[0.6rem] font-black uppercase tracking-widest text-brand-brown/30 hover:text-brand-brown transition-colors flex items-center justify-center gap-2"
-                    >
-                      <ArrowLeft className="w-3 h-3" /> Re-specify Port Address
-                    </button>
-                  </div>
-                </form>
-              )}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('password'); setOtp(''); clearAll(); }}
+                    className="w-full py-2 text-[0.6rem] font-black uppercase tracking-widest text-brand-brown/30 hover:text-brand-brown transition-colors flex items-center justify-center gap-2"
+                  >
+                    <ArrowLeft className="w-3 h-3" /> Back to Login
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </div>

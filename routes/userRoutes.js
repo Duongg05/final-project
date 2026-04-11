@@ -4,6 +4,7 @@ const userController = require('../controllers/userController');
 const { authMiddleware, roleMiddleware } = require('../middlewares/authMiddleware');
 const { validate } = require('../middlewares/validationMiddleware');
 const { createUserValidation, updateUserValidation } = require('../validations/userValidation');
+const upload = require('../middlewares/uploadMiddleware');
 
 // Protect all user management routes
 const adminOrHR = roleMiddleware(['Admin', 'HR Manager']);
@@ -35,7 +36,7 @@ router.use(authMiddleware);
 // API endpoints
 router.get('/', roleMiddleware(['Admin', 'HR Manager', 'Project Manager', 'Developer', 'Tester', 'Viewer']), userController.getAllUsers);
 router.post('/', adminOrHR, createUserValidation, validate, userController.createUser);
-router.put('/:id', allowSelfOrAdmin, updateUserValidation, validate, userController.updateUser);
+router.put('/:id', allowSelfOrAdmin, upload.single('avatar'), updateUserValidation, validate, userController.updateUser);
 router.delete('/:id', adminOrHR, userController.deleteUser);
 
 module.exports = router;

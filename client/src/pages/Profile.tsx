@@ -5,9 +5,11 @@ import { Mail, Shield, Lock, Save, AlertCircle, LogOut } from 'lucide-react';
 import api from '../services/api';
 
 const Profile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -30,30 +32,47 @@ const Profile: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Password sequence mismatch' });
-      return;
-    }
+    
+    // Validation check removed due to missing Confirm Password UI field
 
     try {
       setLoading(true);
       setMessage({ type: '', text: '' });
       
-      const updateData: any = {
-        username: formData.username,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName
-      };
-      
-      if (formData.newPassword) {
-        updateData.password = formData.newPassword;
-        updateData.currentPassword = formData.currentPassword;
+      let payload: any;
+      let config = {};
+
+      if (avatarFile) {
+        payload = new FormData();
+        payload.append('username', formData.username);
+        payload.append('email', formData.email);
+        payload.append('firstName', formData.firstName);
+        payload.append('lastName', formData.lastName);
+        if (formData.newPassword) {
+          payload.append('password', formData.newPassword);
+          payload.append('currentPassword', formData.currentPassword);
+        }
+        payload.append('avatar', avatarFile);
+        config = { headers: { 'Content-Type': 'multipart/form-data' } };
+      } else {
+        payload = {
+          username: formData.username,
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName
+        };
+        
+        if (formData.newPassword) {
+          payload.password = formData.newPassword;
+          payload.currentPassword = formData.currentPassword;
+        }
       }
 
-      await api.put(`/users/${user?.id}`, updateData);
+      const response = await api.put(`/users/${user?.id}`, payload, config);
+      login(response.data); // Force global context refresh with updated avatar metadata
       setMessage({ type: 'success', text: 'System identity updated successfully' });
       setFormData({ ...formData, currentPassword: '', newPassword: '', confirmPassword: '' });
+      setAvatarFile(null);
     } catch (error: any) {
       setMessage({ type: 'error', text: error.response?.data?.message || 'Identity update failed' });
     } finally {
@@ -82,14 +101,29 @@ const Profile: React.FC = () => {
 
             {/* Photo Section */}
             <div className="flex items-center gap-10">
-              <div className="w-32 h-32 rounded-[2.5rem] bg-brand-brown flex items-center justify-center text-white font-black text-4xl shadow-2xl border-4 border-white ring-1 ring-brand-brown/5 transform hover:scale-105 transition-transform duration-500">
-                {(formData.firstName?.charAt(0) || user?.username?.charAt(0) || 'U').toUpperCase()}
+              <div className="w-32 h-32 rounded-[2.5rem] bg-brand-brown overflow-hidden flex items-center justify-center text-white font-black text-4xl shadow-2xl border-4 border-white ring-1 ring-brand-brown/5 transform hover:scale-105 transition-transform duration-500">
+                {previewUrl || user?.avatar ? (
+                   <img src={previewUrl || `http://localhost:5000/${user?.avatar}`} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  (formData.firstName?.charAt(0) || user?.username?.charAt(0) || 'U').toUpperCase()
+                )}
               </div>
               <div>
-                <button className="flex items-center gap-3 px-6 py-3 bg-brand-cream text-brand-brown text-[0.75rem] font-black uppercase tracking-widest rounded-xl hover:bg-white border border-brand-brown/10 transition-all shadow-sm active:scale-95 mb-3">
+                <label className="cursor-pointer flex items-center gap-3 px-6 py-3 bg-brand-cream text-brand-brown text-[0.75rem] font-black uppercase tracking-widest rounded-xl hover:bg-white border border-brand-brown/10 transition-all shadow-sm active:scale-95 mb-3">
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/png, image/jpeg"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setAvatarFile(e.target.files[0]);
+                        setPreviewUrl(URL.createObjectURL(e.target.files[0]));
+                      }
+                    }}
+                  />
                   <Save className="w-4 h-4 opacity-50" />
                   Upload New Photo
-                </button>
+                </label>
                 <p className="text-[0.65rem] font-bold text-brand-brown/30 italic">JPG or PNG. Max size 5MB.</p>
               </div>
             </div>
