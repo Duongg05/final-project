@@ -52,7 +52,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/source-code" element={
-              <ProtectedRoute allowedRoles={['Admin', 'Project Manager', 'Developer']}>
+              <ProtectedRoute allowedRoles={['Admin', 'Project Manager', 'Developer', 'Tester']}>
                 <SourceCode />
               </ProtectedRoute>
             } />

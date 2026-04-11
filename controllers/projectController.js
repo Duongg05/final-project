@@ -41,6 +41,12 @@ exports.getProjects = async (req, res) => {
       ];
     }
 
+    // Role-based visibility logic: 
+    // If not Admin or PM, user can only see projects where they are in the team array
+    if (req.user && !['Admin', 'Project Manager'].includes(req.user.role)) {
+      query.team = req.user.id;
+    }
+
     const projects = await Project.find(query).populate('team', 'username email role');
     res.json(projects);
   } catch (error) {

@@ -20,7 +20,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title }) => {
     { name: 'Projects', icon: FolderKanban, path: '/projects' },
     { name: 'HR Management', icon: Users, path: '/hr', allowedRoles: ['Admin', 'HR Manager'] },
     { name: 'Tasks', icon: CheckSquare, path: '/tasks' },
-    { name: 'Source Code', icon: Code, path: '/source-code', allowedRoles: ['Admin', 'Project Manager', 'Developer'] },
+    { name: 'Source Code', icon: Code, path: '/source-code', allowedRoles: ['Admin', 'Project Manager', 'Developer', 'Tester'] },
     { name: 'Documents', icon: FileText, path: '/documents' },
     { name: 'Attendance', icon: Clock, path: '/attendance' },
     { name: 'Security', icon: ShieldAlert, path: '/security', allowedRoles: ['Admin'] },

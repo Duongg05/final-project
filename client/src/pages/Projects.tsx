@@ -4,7 +4,9 @@ import {
   Calendar, Target, Flag, Edit, Trash2, X, FolderKanban
 } from 'lucide-react';
 import { getProjects, createProject, updateProject, deleteProject } from '../services/projectService';
+import { getUsers } from '../services/userService';
 import type { ProjectData } from '../services/projectService';
+import type { UserData } from '../services/userService';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -39,6 +41,7 @@ const Projects: React.FC = () => {
   const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [projects, setProjects] = useState<ProjectData[]>([]);
+  const [usersList, setUsersList] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('All');
   
@@ -52,8 +55,9 @@ const Projects: React.FC = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const data = await getProjects();
+      const [data, users] = await Promise.all([getProjects(), getUsers()]);
       setProjects(data);
+      setUsersList(users);
     } catch (error) {
       console.error('Failed to fetch projects', error);
     } finally {
@@ -76,7 +80,8 @@ const Projects: React.FC = () => {
 
   const handleOpenModal = (project?: ProjectData) => {
     if (project) {
-      setCurrentProject(project);
+      // Map populated team objects to their _id string for editing
+      setCurrentProject({...project, team: project.team?.map((m: any) => m._id || m) || []});
     } else {
       setCurrentProject({
         projectId: `PRJ-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -84,7 +89,8 @@ const Projects: React.FC = () => {
         description: '',
         status: 'Planning',
         progress: 0,
-        priority: 'Medium'
+        priority: 'Medium',
+        team: []
       });
     }
     setIsModalOpen(true);
@@ -310,6 +316,31 @@ const Projects: React.FC = () => {
                 <div className="space-y-3">
                   <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Target Deadline</label>
                   <input type="date" value={currentProject.dueDate ? new Date(currentProject.dueDate).toISOString().split('T')[0] : ''} onChange={e => setCurrentProject({...currentProject, dueDate: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.95rem] font-black focus:ring-4 focus:ring-brand-brown/5 outline-none transition-all" />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Team Assignments</label>
+                <div className="bg-brand-cream/30 border border-brand-brown/10 rounded-2xl p-4 max-h-[150px] overflow-y-auto grid grid-cols-2 gap-3">
+                  {usersList.map((usr: UserData) => {
+                      const isSelected = (currentProject.team || []).some((m: any) => m === usr._id || (m && m._id === usr._id));
+                      return (
+                        <label key={usr._id} className="flex items-center gap-3 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const newTeam = e.target.checked 
+                                ? [...(currentProject.team || []), usr._id]
+                                : (currentProject.team || []).filter((m: any) => (m._id || m) !== usr._id);
+                              setCurrentProject({...currentProject, team: newTeam});
+                            }}
+                            className="w-4 h-4 text-brand-brown border-brand-brown/20 rounded focus:ring-brand-brown/20"
+                          />
+                          <span className="text-[0.8rem] font-bold text-brand-brown">{usr.username} <span className="text-brand-brown/40 text-[0.65rem] font-black uppercase tracking-widest leading-none ml-1">({usr.role})</span></span>
+                        </label>
+                      );
+                  })}
                 </div>
               </div>
 

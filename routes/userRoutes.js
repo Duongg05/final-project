@@ -33,7 +33,7 @@ const allowSelfOrAdmin = async (req, res, next) => {
 router.use(authMiddleware);
 
 // API endpoints
-router.get('/', roleMiddleware(['Admin', 'HR Manager', 'Project Manager', 'Developer']), userController.getAllUsers);
+router.get('/', roleMiddleware(['Admin', 'HR Manager', 'Project Manager', 'Developer', 'Tester', 'Viewer']), userController.getAllUsers);
 router.post('/', adminOrHR, createUserValidation, validate, userController.createUser);
 router.put('/:id', allowSelfOrAdmin, updateUserValidation, validate, userController.updateUser);
 router.delete('/:id', adminOrHR, userController.deleteUser);

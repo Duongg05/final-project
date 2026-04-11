@@ -269,7 +269,7 @@ const HRManagement: React.FC = () => {
                 <div className="space-y-3">
                   <label className="text-[0.65rem] font-black uppercase tracking-[0.2em] text-brand-brown/30 ml-1">Access Tier</label>
                   <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.9rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer">
-                    {['Admin', 'HR Manager', 'Project Manager', 'Developer', 'Tester', 'Viewer'].map(r => <option key={r} value={r}>{r}</option>)}
+                    {['Project Manager', 'Developer', 'Tester', 'Viewer'].map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div className="space-y-3">

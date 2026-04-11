@@ -29,6 +29,12 @@ exports.getTasks = async (req, res) => {
     if (req.query.status && req.query.status !== 'All') query.status = req.query.status;
     if (req.query.assigneeId) query.assigneeId = req.query.assigneeId;
 
+    // Role-based visibility logic: 
+    // If not Admin or PM, user can only see their assigned tasks
+    if (req.user && !['Admin', 'Project Manager'].includes(req.user.role)) {
+      query.assigneeId = req.user.id;
+    }
+
     const tasks = await Task.find(query)
       .populate('projectId', 'name projectId')
       .populate('assigneeId', 'username email role');

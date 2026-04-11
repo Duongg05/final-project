@@ -109,8 +109,6 @@ const Register: React.FC = () => {
                   onChange={handleChange}
                   className="w-full bg-brand-cream/30 border border-brand-brown/10 rounded-2xl pl-12 pr-4 py-4 text-brand-brown text-[0.8rem] font-black uppercase tracking-widest focus:outline-none focus:ring-4 focus:ring-brand-brown/5 appearance-none cursor-pointer"
                 >
-                  <option value="Admin">Admin Clearance</option>
-                  <option value="HR Manager">Human Resources</option>
                   <option value="Project Manager">Project Management</option>
                   <option value="Developer">Engineering Unit</option>
                   <option value="Tester">Quality Assurance</option>

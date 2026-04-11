@@ -281,7 +281,18 @@ const Tasks: React.FC = () => {
                       className="w-full px-6 py-[1rem] bg-brand-cream/30 border border-brand-brown/10 rounded-2xl text-brand-brown text-[0.85rem] font-black uppercase tracking-widest focus:ring-4 focus:ring-brand-brown/5 outline-none appearance-none cursor-pointer"
                     >
                       <option value="">Unassigned</option>
-                      {usersList.map((u: UserData) => <option key={u._id} value={u._id}>{u.username} ({u.role})</option>)}
+                      {(() => {
+                         const selectedProjectId = typeof currentTask.projectId === 'string' ? currentTask.projectId : currentTask.projectId?._id;
+                         const selectedProject = projects.find(p => p._id === selectedProjectId);
+                         const teamMembers = selectedProject?.team || [];
+                         return teamMembers.map((m: any) => {
+                             const userId = m._id || m;
+                             const userObj = usersList.find(u => u._id === userId);
+                             const username = userObj?.username || m.username || 'System User';
+                             const role = userObj?.role || m.role || 'Unknown';
+                             return <option key={userId} value={userId}>{username} ({role})</option>;
+                         });
+                      })()}
                     </select>
                   </div>
                 </div>
