@@ -29,6 +29,22 @@ exports.getSourceCodes = async (req, res) => {
   try {
     let query = {};
     if (req.query.projectId) query.projectId = req.query.projectId;
+
+    // Role-based visibility logic: 
+    if (req.user && !['Admin', 'Project Manager'].includes(req.user.role)) {
+      const Project = require('../models/Project');
+      const allowedProjects = await Project.find({ team: req.user.id }).select('_id');
+      const allowedProjectIds = allowedProjects.map(p => p._id.toString());
+      
+      if (req.query.projectId) {
+         if (!allowedProjectIds.includes(req.query.projectId)) {
+             return res.status(403).json({ message: 'Access denied: You are not in this project.' });
+         }
+      } else {
+         query.projectId = { $in: allowedProjectIds };
+      }
+    }
+
     const sourceCodes = await SourceCode.find(query).populate('projectId', 'name projectId');
     res.json(sourceCodes);
   } catch (error) {
